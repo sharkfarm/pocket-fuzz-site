@@ -18,7 +18,7 @@ export default function Home() {
     genre: "Garage Rock / 2-Piece / Alternative Rock",
     description:
       "Pocket Fuzz is a stripped-down rock band built on blown-out guitar, hard-hitting drums, and songs that hit fast and stay loud. Think raw garage rock, hooky riffs, and a live set with the swagger of The White Stripes, the weight of The Black Keys, and the punch of Local H.",
-    email: "booking@pocketfuzz.com",
+    email: mailto:info@pocket-fuzz.com?subject=Information%20Inquiry,
     instagram: "https://instagram.com/pocketfuzz",
     spotify: "https://spotify.com",
     youtube: "https://youtube.com",
