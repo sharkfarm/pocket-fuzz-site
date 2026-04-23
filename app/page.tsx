@@ -8,6 +8,7 @@ type Show = {
 type Track = {
   title: string;
   length: string;
+  video: string;
 };
 
 export default function Home() {
@@ -17,8 +18,8 @@ export default function Home() {
     city: "Denver, Colorado",
     genre: "Garage Rock / 2-Piece / Alternative Rock",
     description:
-      "Pocket Fuzz is a stripped-down rock band built on blown-out guitar, hard-hitting drums, and songs that hit fast and stay loud. Think raw garage rock, hooky riffs, and a live set with the swagger of The White Stripes, the weight of The Black Keys, and the punch of Local H.",
-    email: mailto:info@pocket-fuzz.com?subject=Information%20Inquiry,
+      "Pocket Fuzz is a stripped-down rock band built on blown-out guitar, hard-hitting drums, and songs that hit fast and stay loud.",
+    email: "info@pocket-fuzz.com",
     instagram: "https://instagram.com/pocketfuzz",
     spotify: "https://spotify.com",
     youtube: "https://youtube.com",
@@ -46,9 +47,21 @@ export default function Home() {
   ];
 
   const tracks: Track[] = [
-    { title: "Pocket Knife Romance", length: "2:41" },
-    { title: "Cheap Amp Gospel", length: "3:12" },
-    { title: "Rattlesnake Weekend", length: "2:58" },
+  	{
+	    title: "Bound For The Floor",
+	    length: "1:07",
+	    video: "/videos/202604_BoundForTheFloor.mp4",
+	  },
+	  {
+	    title: "Paint It Black",
+	    length: "2:17",
+	    video: "/videos/202604_PaintItBlack.mp4",
+	  },
+	  {
+	    title: "Your Touch",
+ 	    length: "1:33",
+	    video: "/videos/202604_YourTouch.mp4",
+	},
   ];
 
   const gallery: string[] = [
@@ -195,14 +208,22 @@ export default function Home() {
                   className="grid grid-cols-[60px_1fr_auto] items-center border-b border-stone-800 py-5"
                 >
                   <div className="text-sm font-black text-stone-500">
-                    0{index + 1}
+                    {String(index + 1).padStart(2, "0")}
                   </div>
                   <div>
-                    <div className="text-xl font-bold uppercase">
-                      {track.title}
-                    </div>
+		    <a
+		      href={track.video}
+	  	      target="_blank"
+		      rel="noopener noreferrer"
+		      className="text-xl font-bold uppercase hover:text-red-500"
+		    >
+		      {track.title}
+		    </a>
                   </div>
-                  <div className="text-sm text-stone-500">{track.length}</div>
+
+                  <div className="text-sm text-stone-500">
+		      {track.length}
+		  </div>
                 </div>
               ))}
             </div>
@@ -226,9 +247,17 @@ export default function Home() {
             <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
               Featured Video
             </p>
-            <div className="mt-6 flex h-[320px] items-center justify-center border border-dashed border-stone-700 bg-black text-center text-sm uppercase tracking-[0.2em] text-stone-500">
-              Drop in a live clip, rehearsal video, or embedded single here.
-            </div>
+            <div className="mt-6 border border-stone-700 bg-black p-2">
+  		<video
+  		  controls
+		    playsInline
+		    className="w-full"
+ 		   poster="/images/video-poster.jpg"
+ 		 >
+  		  <source src="/videos/202604_DeadLeaves.mp4" type="video/mp4" />
+ 		   Your browser does not support the video tag.
+		  </video>
+	    </div>
           </div>
         </div>
       </section>
@@ -262,7 +291,14 @@ export default function Home() {
             </p>
             <h2 className="mt-4 text-4xl font-black uppercase">Booking</h2>
             <div className="mt-6 space-y-4 text-lg text-stone-300">
-              <p>{band.email}</p>
+              <p>
+                <a
+                  href={`mailto:${band.email}?subject=Live%20Show%20Inquiry`}
+                  className="text-red-500 hover:text-red-400"
+                >
+                  {band.email}
+                </a>
+              </p>
               <p>
                 <a
                   href={band.instagram}
