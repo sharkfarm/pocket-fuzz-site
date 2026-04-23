@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 type Show = {
   date: string;
   venue: string;
@@ -104,12 +106,18 @@ export default function Home() {
 
       <section className="border-b border-stone-900">
         <div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 md:grid-cols-2 md:items-center md:py-24">
-          <div>
+	<div>
             <p className="mb-4 text-xs font-bold uppercase tracking-[0.35em] text-red-500">
               Denver Garage Rock
             </p>
             <h1 className="max-w-4xl text-6xl font-black uppercase leading-[0.9] tracking-tight text-stone-100 md:text-8xl">
-              Pocket Fuzz
+              <Image
+  		src="/images/Logo2.png"
+		  alt="Pocket Fuzz"
+		  width={200}
+		  height={60}
+		  className="h-100 w-auto"
+	      />
             </h1>
             <p className="mt-6 max-w-xl text-xl font-semibold text-stone-300">
               {band.tagline}
