@@ -262,7 +262,7 @@ export default function Home() {
 		    className="w-full"
  		   poster="/images/video-poster.jpg"
  		 >
-  		  <source src="/videos/202604_DeadLeaves.mp4" type="video/mp4" />
+  		  <source src="/videos/DeadLeaves.mp4" type="video/mp4" />
  		   Your browser does not support the video tag.
 		  </video>
 	    </div>
