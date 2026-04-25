@@ -29,10 +29,10 @@ export default function Home() {
 
   const upcomingShows: Show[] = [
     {
-      date: "May 22, 2026",
-      venue: "Hi-Dive",
+      date: "April 19, 2026",
+      venue: "303 Boards",
       city: "Denver, CO",
-      note: "Doors 8PM",
+      note: "Doors 4PM",
     },
     {
       date: "June 13, 2026",
@@ -52,24 +52,34 @@ export default function Home() {
   	{
 	    title: "Bound For The Floor",
 	    length: "1:07",
-	    video: "/videos/202604_BoundForTheFloor.mp4",
+	    video: "/videos/BoundForTheFloor.mp4",
+	  },
+	  {
+	    title: "Dead Leaves and Dirty Grass",
+	    length: "1:39",
+	    video: "/videos/DeadLeaves.mp4",
 	  },
 	  {
 	    title: "Paint It Black",
 	    length: "2:17",
-	    video: "/videos/202604_PaintItBlack.mp4",
+	    video: "/videos/PaintItBlack.mp4",
+	  },
+	  {
+	    title: "Fell In Love With A Girl",
+	    length: "1:39",
+	    video: "/videos/FellInLoveWithAGirl.mp4",
 	  },
 	  {
 	    title: "Your Touch",
  	    length: "1:33",
-	    video: "/videos/202604_YourTouch.mp4",
+	    video: "/videos/YourTouch.mp4",
 	},
   ];
 
   const gallery: string[] = [
-    "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=1200&q=80",
+    "/images/Brandon1.png?auto=format&fit=crop&w=1200&q=80",
+    "/images/PocketFuzz1.png?auto=format&fit=crop&w=1200&q=80",
+    "/images/Bobby1.png?auto=format&fit=crop&w=1200&q=80",
   ];
 
   return (
@@ -144,7 +154,7 @@ export default function Home() {
           <div className="relative">
             <div className="absolute -left-4 -top-4 h-full w-full border border-red-700/50" />
             <img
-              src={gallery[0]}
+              src="/images/PocketFuzz1.png"
               alt="Pocket Fuzz live"
               className="relative h-[460px] w-full border border-stone-800 object-cover grayscale contrast-125"
             />
@@ -262,7 +272,7 @@ export default function Home() {
 		    className="w-full"
  		   poster="/images/video-poster.jpg"
  		 >
-  		  <source src="/videos/DeadLeaves.mp4" type="video/mp4" />
+  		  <source src="/videos/YourTouch.mp4" type="video/mp4" />
  		   Your browser does not support the video tag.
 		  </video>
 	    </div>
@@ -313,22 +323,6 @@ export default function Home() {
                   className="text-red-500 hover:text-red-400"
                 >
                   Instagram
-                </a>
-              </p>
-              <p>
-                <a
-                  href={band.spotify}
-                  className="text-red-500 hover:text-red-400"
-                >
-                  Spotify
-                </a>
-              </p>
-              <p>
-                <a
-                  href={band.youtube}
-                  className="text-red-500 hover:text-red-400"
-                >
-                  YouTube
                 </a>
               </p>
             </div>
