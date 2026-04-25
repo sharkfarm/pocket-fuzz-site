@@ -309,25 +309,9 @@ export default function Home() {
                   Instagram
                 </a>
               </p>
+	     </div>
             </div>
           </div>
-
-          <div className="border border-stone-800 bg-[#11100f] p-8">
-            <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
-              For Promoters
-            </p>
-            <h2 className="mt-4 text-3xl font-black uppercase">
-              What This Site Should Sell
-            </h2>
-            <ul className="mt-6 list-disc space-y-3 pl-5 text-stone-300">
-              <li>What Pocket Fuzz sounds like in one sentence</li>
-              <li>Why the live show works</li>
-              <li>Where you are based</li>
-              <li>How to book you fast</li>
-              <li>Links to music and live video</li>
-            </ul>
-          </div>
-        </div>
       </section>
 
       <footer className="border-t border-stone-900 px-6 py-8 text-center text-xs uppercase tracking-[0.25em] text-stone-600">
