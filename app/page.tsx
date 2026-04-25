@@ -22,9 +22,7 @@ export default function Home() {
     description:
       "Pocket Fuzz is a stripped-down rock band built on blown-out guitar, hard-hitting drums, and songs that hit fast and stay loud.",
     email: "info@pocket-fuzz.com",
-    instagram: "https://instagram.com/pocketfuzz",
-    spotify: "https://spotify.com",
-    youtube: "https://youtube.com",
+    instagram: "https://instagram.com/pocketfuzzmusic",
   };
 
   const upcomingShows: Show[] = [
@@ -244,20 +242,6 @@ export default function Home() {
 		  </div>
                 </div>
               ))}
-            </div>
-            <div className="mt-6 flex gap-4">
-              <a
-                href={band.spotify}
-                className="border border-stone-700 px-5 py-3 text-sm font-black uppercase tracking-[0.2em] text-stone-200 hover:border-white"
-              >
-                Spotify
-              </a>
-              <a
-                href={band.youtube}
-                className="border border-stone-700 px-5 py-3 text-sm font-black uppercase tracking-[0.2em] text-stone-200 hover:border-white"
-              >
-                YouTube
-              </a>
             </div>
           </div>
 
