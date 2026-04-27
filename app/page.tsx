@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { useState } from "react";
 
 type Show = {
   date: string;
@@ -23,6 +26,7 @@ export default function Home() {
       "Pocket Fuzz is a stripped-down rock band built on blown-out guitar, hard-hitting drums, and songs that hit fast and stay loud.",
     email: "info@pocket-fuzz.com",
     instagram: "https://instagram.com/pocketfuzzmusic",
+    youtube: "https://youtube.com/@PocketFuzz-music",
   };
 
   const upcomingShows: Show[] = [
@@ -50,29 +54,33 @@ export default function Home() {
   	{
 	    title: "Bound For The Floor",
 	    length: "1:07",
-	    video: "/videos/BoundForTheFloor.mp4",
+	    video: "https://www.youtube.com/embed/R5Bz41R96KA",
 	  },
 	  {
-	    title: "Dead Leaves and Dirty Grass",
+	    title: "Dead Leaves and the Dirty Ground",
 	    length: "1:39",
-	    video: "/videos/DeadLeaves.mp4",
+	    video: "https://www.youtube.com/embed/OAEi6pvJAg",
 	  },
 	  {
 	    title: "Paint It Black",
 	    length: "2:17",
-	    video: "/videos/PaintItBlack.mp4",
+	    video: "https://www.youtube.com/embed/ajaYrBIm_fc",
 	  },
 	  {
 	    title: "Fell In Love With A Girl",
 	    length: "1:39",
-	    video: "/videos/FellInLoveWithAGirl.mp4",
+	    video: "https://www.youtube.com/embed/YlrqZ2IvuVM",
 	  },
 	  {
 	    title: "Your Touch",
  	    length: "1:33",
-	    video: "/videos/YourTouch.mp4",
+	    video: "https://www.youtube.com/embed/63T8s85yUQU",
 	},
   ];
+
+  const defaultVideo = "https://www.youtube.com/embed/tZoezYyBFCY";
+  const [activeVideo, setActiveVideo] = useState(defaultVideo);
+  const [activeTitle, setActiveTitle] = useState("");
 
   const gallery: string[] = [
     "/images/Brandon1.png?auto=format&fit=crop&w=1200&q=80",
@@ -227,14 +235,22 @@ export default function Home() {
                     {String(index + 1).padStart(2, "0")}
                   </div>
                   <div>
-		    <a
-		      href={track.video}
-	  	      target="_blank"
-		      rel="noopener noreferrer"
-		      className="text-xl font-bold uppercase hover:text-red-500"
+		    <button
+		      type="button"
+		      onClick={() => {
+	    	        setActiveVideo(track.video);
+			setActiveTitle(track.title);
+
+		        setTimeout(() => {
+ 		        setActiveVideo(defaultVideo);
+		        }, 120000); // 2 minutes (adjust per your clips)
+		      }}
+		      className={`text-left text-xl font-bold uppercase hover:text-red-500 ${
+	 	      activeTitle === track.title ? "text-red-500" : "text-stone-100"
+		     }`}
 		    >
-		      {track.title}
-		    </a>
+	    	     {track.title}
+		    </button>
                   </div>
 
                   <div className="text-sm text-stone-500">
@@ -243,23 +259,38 @@ export default function Home() {
                 </div>
               ))}
             </div>
+	    <div className="mt-6 flex gap-4">
+              <a
+                href={band.youtube}
+                className="border border-stone-700 px-5 py-3 text-sm font-black uppercase tracking-[0.2em] text-stone-200 hover:border-white"
+              >
+                YouTube
+              </a>
+            </div>
           </div>
 
           <div className="border border-stone-800 bg-[#11100f] p-8">
             <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
               Featured Video
             </p>
-            <div className="mt-6 border border-stone-700 bg-black p-2">
-  		<video
-  		  controls
-		    playsInline
-		    className="w-full"
- 		   poster="/images/video-poster.jpg"
- 		 >
-  		  <source src="/videos/YourTouch.mp4" type="video/mp4" />
- 		   Your browser does not support the video tag.
-		  </video>
+             <div className="mt-6 border border-stone-700 bg-black p-2">
+	      <iframe
+	        className="w-full aspect-video"
+	        src={activeVideo}
+	        title="Pocket Fuzz video"
+	        frameBorder="0"
+	        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+	        allowFullScreen
+	        referrerPolicy="strict-origin-when-cross-origin"
+	      ></iframe>
 	    </div>
+
+	    <p className="mt-4 text-sm uppercase tracking-[0.2em] text-stone-500">
+	      Now playing:{" "}
+	      <span className="text-red-500">
+	        {activeTitle || "Featured Video"}
+	      </span>
+	    </p>
           </div>
         </div>
       </section>
@@ -308,6 +339,9 @@ export default function Home() {
                 >
                   Instagram
                 </a>
+              </p>
+	      <p>
+                <a href={band.youtube} className="text-red-500 hover:text-red-400">YouTube</a>
               </p>
 	     </div>
             </div>
