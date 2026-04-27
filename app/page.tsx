@@ -37,16 +37,10 @@ export default function Home() {
       note: "Doors 4PM",
     },
     {
-      date: "June 13, 2026",
-      venue: "Lost Lake Lounge",
+      date: "TBD",
+      venue: "Coming Soon",
       city: "Denver, CO",
-      note: "With local support",
-    },
-    {
-      date: "July 10, 2026",
-      venue: "Moe's Original BBQ",
-      city: "Englewood, CO",
-      note: "Late set",
+      note: "Booking Now",
     },
   ];
 
@@ -59,7 +53,7 @@ export default function Home() {
 	  {
 	    title: "Dead Leaves and the Dirty Ground",
 	    length: "1:39",
-	    video: "https://www.youtube.com/embed/OAEi6pvJAg",
+	    video: "https://www.youtube.com/embed/-OAEi6pvJAg",
 	  },
 	  {
 	    title: "Paint It Black",
@@ -238,7 +232,8 @@ export default function Home() {
 		    <button
 		      type="button"
 		      onClick={() => {
-	    	        setActiveVideo(track.video);
+	    	        const autoplayUrl = `${track.video}?autoplay=1&mute=0`;
+  			setActiveVideo(autoplayUrl);
 			setActiveTitle(track.title);
 
 		        setTimeout(() => {
