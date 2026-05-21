@@ -84,7 +84,7 @@ export default function Home() {
 
   const gallery: string[] = [
     "/images/PF_PROMO1.jpg?auto=format&fit=crop&w=1200&q=80",
-    "/images/PocketFuzz3.png?auto=format&fit=crop&w=1200&q=80",
+    "/images/pocketfuzz3.png?auto=format&fit=crop&w=1200&q=80",
     "/images/PF_PROMO2.jpg?auto=format&fit=crop&w=1200&q=80",
   ];
 
@@ -128,7 +128,7 @@ export default function Home() {
             </p>
             <h1 className="max-w-4xl text-6xl font-black uppercase leading-[0.9] tracking-tight text-stone-100 md:text-8xl">
               <Image
-  		src="/images/Pocket-Fuzz Logo-transp.png"
+  		src="/images/Pocket-Fuzz-LogoT.png"
 		  alt="Pocket Fuzz"
 		  width={200}
 		  height={60}
@@ -160,7 +160,7 @@ export default function Home() {
           <div className="relative">
             <div className="absolute -left-4 -top-4 h-full w-full border border-red-700/50" />
             <img
-              src="/images/PocketFuzz3.png"
+              src="/images/pocketfuzz3.png"
               alt="Pocket Fuzz live"
               className="relative h-[460px] w-full border border-stone-800 object-cover grayscale contrast-125"
             />
