@@ -8,6 +8,7 @@ type Show = {
   venue: string;
   city: string;
   note: string;
+  flyer?: string;
 };
 
 type Track = {
@@ -41,6 +42,7 @@ export default function Home() {
       venue: "SRS Denver",
       city: "Denver, CO",
       note: "Special Guest The Magpies  - 6PM",
+      flyer: "/images/20260606_SRSFlyer.png",
     },
     {
       date: "August 29, 2026",
@@ -202,13 +204,26 @@ export default function Home() {
                   {show.date}
                 </div>
                 <div>
-                  <div className="text-2xl font-bold uppercase">
-                    {show.venue}
-                  </div>
-                  <div className="text-sm uppercase tracking-wider text-stone-500">
-                    {show.city}
-                  </div>
-                </div>
+		  {show.flyer ? (
+		    <a
+		      href={show.flyer}
+		      target="_blank"
+		      rel="noopener noreferrer"
+		      className="text-2xl font-bold uppercase hover:text-red-500"
+		    >
+		      {show.venue}
+		    </a>
+		  ) : (
+		    <div className="text-2xl font-bold uppercase">
+		      {show.venue}
+		    </div>
+		  )}
+		
+		  <div className="text-sm uppercase tracking-wider text-stone-500">
+		    {show.city}
+		  </div>
+		</div>
+
                 <div className="text-sm uppercase tracking-wider text-stone-400">
                   {show.note}
                 </div>
