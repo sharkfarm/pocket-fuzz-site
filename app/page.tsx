@@ -21,9 +21,9 @@ export default function Home() {
     name: "Pocket Fuzz",
     tagline: "Fuzzed-out riffs. Big drums. No wasted motion.",
     city: "Denver, Colorado",
-    genre: "Garage Rock / 2-Piece / Alternative Rock",
+    genre: "Garage Rock / 3-Piece / Alternative Rock",
     description:
-      "Pocket Fuzz is a stripped-down rock band built on blown-out guitar, hard-hitting drums, and songs that hit fast and stay loud.",
+      "Pocket Fuzz is a stripped-down rock band built on blown-out guitar, driving bass, hard-hitting drums, and songs that hit fast and stay loud.",
     email: "info@pocket-fuzz.com",
     instagram: "https://instagram.com/pocketfuzzmusic",
     youtube: "https://youtube.com/@PocketFuzz-music",
@@ -37,10 +37,16 @@ export default function Home() {
       note: "Doors 4PM",
     },
     {
-      date: "TBD",
-      venue: "Coming Soon",
+      date: "June 6, 2026",
+      venue: "SRS Denver",
       city: "Denver, CO",
-      note: "Booking Now",
+      note: "Special Guest The Magpies  - 6PM",
+    },
+    {
+      date: "August 29, 2026",
+      venue: "Southmoor Rocks, Location TBD",
+      city: "Denver, CO",
+      note: "Supporting Southmoor Elementary",
     },
   ];
 
@@ -77,9 +83,9 @@ export default function Home() {
   const [activeTitle, setActiveTitle] = useState("");
 
   const gallery: string[] = [
-    "/images/Brandon1.png?auto=format&fit=crop&w=1200&q=80",
-    "/images/PocketFuzz1.png?auto=format&fit=crop&w=1200&q=80",
-    "/images/Bobby1.png?auto=format&fit=crop&w=1200&q=80",
+    "/images/PF_PROMO1.jpg?auto=format&fit=crop&w=1200&q=80",
+    "/images/PocketFuzz3.png?auto=format&fit=crop&w=1200&q=80",
+    "/images/PF_PROMO2.jpg?auto=format&fit=crop&w=1200&q=80",
   ];
 
   return (
@@ -122,7 +128,7 @@ export default function Home() {
             </p>
             <h1 className="max-w-4xl text-6xl font-black uppercase leading-[0.9] tracking-tight text-stone-100 md:text-8xl">
               <Image
-  		src="/images/Logo2.png"
+  		src="/images/Pocket-Fuzz Logo-transp.png"
 		  alt="Pocket Fuzz"
 		  width={200}
 		  height={60}
@@ -154,7 +160,7 @@ export default function Home() {
           <div className="relative">
             <div className="absolute -left-4 -top-4 h-full w-full border border-red-700/50" />
             <img
-              src="/images/PocketFuzz1.png"
+              src="/images/PocketFuzz3.png"
               alt="Pocket Fuzz live"
               className="relative h-[460px] w-full border border-stone-800 object-cover grayscale contrast-125"
             />
