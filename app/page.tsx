@@ -332,6 +332,43 @@ export default function Home() {
         </div>
       </section>
 
+	<section id="upload" className="mx-auto max-w-7xl px-6 py-16">
+	  <div className="border border-stone-800 bg-[#11100f] p-8 text-center">
+	    <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
+	      Share Your Shots
+	    </p>
+
+	    <h2 className="mt-4 text-4xl font-black uppercase">
+	      Upload Photos & Videos
+	    </h2>
+
+	    <p className="mx-auto mt-4 max-w-xl text-stone-400">
+	      Got photos or video from a Pocket Fuzz show? Send them our way.
+	    </p>
+
+	    <a
+	      href="https://docs.google.com/forms/d/e/1FAIpQLScnVtYpYno16eOY0yoQVgFX_8wIA1aoXpX0LPNv5ZVo3S5_xA/viewform?usp=publish-editor"
+	      target="_blank"
+	      rel="noopener noreferrer"
+	      className="mt-8 inline-block border border-red-600 bg-red-600 px-6 py-3 text-sm font-black uppercase tracking-[0.2em] text-white hover:bg-red-700"
+	    >
+	      Upload Files
+	    </a>
+
+	    <div className="mx-auto mt-8 max-w-[220px] border border-stone-700 bg-white p-3">
+	      <img
+	        src="/images/pf-download-qrcode.png"
+	        alt="QR code to upload Pocket Fuzz photos and videos"
+	        className="w-full"
+	      />
+	    </div>
+
+	    <p className="mt-4 text-xs uppercase tracking-[0.2em] text-stone-500">
+	      Scan to upload
+	    </p>
+	  </div>
+	</section>
+
       <section id="contact" className="mx-auto max-w-7xl px-6 py-16">
         <div className="grid gap-8 md:grid-cols-2">
           <div>
