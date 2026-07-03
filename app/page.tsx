@@ -53,30 +53,49 @@ export default function Home() {
   ];
 
   const tracks: Track[] = [
-  	{
+  	 {
+	    title: "Helter Skelter",
+	    length: "1:30",
+	    video: "https://www.youtube.com/embed//wBSYCASy_18",
+	  },{
 	    title: "Bound For The Floor",
-	    length: "1:07",
-	    video: "https://www.youtube.com/embed/R5Bz41R96KA",
+	    length: "3:37",
+	    video: "https://www.youtube.com/embed/2JklaYDFttU",
+	  },
+	  {
+	    title: "Steady As She Goes",
+	    length: "1:22",
+	    video: "https://www.youtube.com/embed/l5bQi1h6jGw",
 	  },
 	  {
 	    title: "Dead Leaves and the Dirty Ground",
-	    length: "1:39",
-	    video: "https://www.youtube.com/embed/-OAEi6pvJAg",
+	    length: "1:18",
+	    video: "https://www.youtube.com/embed/huulztoXRbM",
 	  },
 	  {
 	    title: "Paint It Black",
-	    length: "2:17",
-	    video: "https://www.youtube.com/embed/ajaYrBIm_fc",
+	    length: "3:05",
+	    video: "https://www.youtube.com/embed/oMzyYgtgFLk",
+	  },
+ 	 {
+	    title: "Good",
+	    length: "1:56",
+	    video: "https://www.youtube.com/embed/Gr73N4mguNo",
 	  },
 	  {
-	    title: "Fell In Love With A Girl",
-	    length: "1:39",
-	    video: "https://www.youtube.com/embed/YlrqZ2IvuVM",
+	    title: "Flagpole Sitta",
+	    length: "3:32",
+	    video: "https://www.youtube.com/embed/9YIOrQKTYFo",
+	  },
+	   {
+	    title: "Hey Jealousy",
+	    length: "2:11",
+	    video: "https://www.youtube.com/embed/r9EvcaGu7aQ",
 	  },
 	  {
 	    title: "Your Touch",
- 	    length: "1:33",
-	    video: "https://www.youtube.com/embed/63T8s85yUQU",
+ 	    length: "1:23",
+	    video: "https://www.youtube.com/embed/34BI1aPoK5w",
 	},
   ];
 
