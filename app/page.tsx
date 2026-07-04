@@ -92,6 +92,11 @@ export default function Home() {
 	    length: "2:11",
 	    video: "https://www.youtube.com/embed/r9EvcaGu7aQ",
 	  },
+ 	  {
+	    title: "Rocky Mountain Way",
+	    length: "3:02",
+	    video: "https://www.youtube.com/embed/nlISx06ph0c",
+	  },
 	  {
 	    title: "Your Touch",
  	    length: "1:23",
@@ -99,14 +104,17 @@ export default function Home() {
 	},
   ];
 
-  const defaultVideo = "https://www.youtube.com/embed/tZoezYyBFCY";
+  const defaultVideo = "https://www.youtube.com/embed/tSciqx4_ieY";
   const [activeVideo, setActiveVideo] = useState(defaultVideo);
-  const [activeTitle, setActiveTitle] = useState("");
+  const [activeTitle, setActiveTitle] = useState("Pocket Fuzz");
 
   const gallery: string[] = [
-    "/images/PF_PROMO1.jpg?auto=format&fit=crop&w=1200&q=80",
-    "/images/pocketfuzz3.png?auto=format&fit=crop&w=1200&q=80",
-    "/images/PF_PROMO2.jpg?auto=format&fit=crop&w=1200&q=80",
+    "/images/PF_PROMO1.jpg",
+    "/images/PF_PROMO3.jpg",
+    "/images/PF_PROMO2.jpg",
+    "/images/Brandon1.png",
+    "/images/Ricky1.png",
+    "/images/Bobby1.png",
   ];
 
   return (
@@ -181,9 +189,9 @@ export default function Home() {
           <div className="relative">
             <div className="absolute -left-4 -top-4 h-full w-full border border-red-700/50" />
             <img
-              src="/images/pocketfuzz3.png"
+              src="/images/PocketFuzz1.png"
               alt="Pocket Fuzz live"
-              className="relative h-[460px] w-full border border-stone-800 object-cover grayscale contrast-125"
+              className="relative h-[460px] w-full border border-stone-800 object-cover"
             />
           </div>
         </div>
@@ -344,7 +352,7 @@ export default function Home() {
                 key={image}
                 src={image}
                 alt={`Pocket Fuzz photo ${index + 1}`}
-                className="h-80 w-full border border-stone-800 object-cover grayscale contrast-125"
+                className="h-80 w-full border border-stone-800 object-cover"
               />
             ))}
           </div>
