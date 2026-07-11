@@ -9,6 +9,7 @@ type Show = {
   city: string;
   note: string;
   flyer?: string;
+  tickets?: string;
 };
 
 type Track = {
@@ -32,17 +33,19 @@ export default function Home() {
 
   const upcomingShows: Show[] = [
     {
-      date: "April 19, 2026",
-      venue: "303 Boards",
-      city: "Denver, CO",
-      note: "Doors 4PM",
-    },
-    {
       date: "June 6, 2026",
       venue: "SRS Denver",
       city: "Denver, CO",
       note: "Special Guest The Magpies  - 6PM",
       flyer: "/images/20260606_SRSFlyer.png",
+    },
+    {
+      date: "August 9, 2026",
+      venue: "Globe Hall",
+      city: "Denver, CO",
+      note: "with Pennysick   Doors 4PM, Show 5PM",
+      flyer: "/images/20260809_GlobeHall.png",
+      tickets: "coming soon"
     },
     {
       date: "August 29, 2026",
@@ -251,9 +254,22 @@ export default function Home() {
 		  </div>
 		</div>
 
+                <div className="flex flex-col items-end gap-2">
                 <div className="text-sm uppercase tracking-wider text-stone-400">
-                  {show.note}
-                </div>
+                                {show.note}
+                 </div>
+
+                                {show.tickets && (
+                               <a
+                                     href={show.tickets}
+                                     target="_blank"
+                                     rel="noopener noreferrer"
+                                    className="rounded border border-red-600 bg-red-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-red-700"
+                               >
+                               Buy Tickets
+                              </a>
+                              )}
+                 </div>
               </div>
             ))}
           </div>
