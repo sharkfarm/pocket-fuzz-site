@@ -32,7 +32,7 @@ type Track = {
 
 export default function Home() {
   const band = {
-    name: "Pocket Fuzz",
+    name: "Pocket Fuzz Test",
     tagline: "Fuzzed-out riffs. Big drums. No wasted motion.",
     city: "Denver, Colorado",
     genre: "Garage Rock / 3-Piece / Alternative Rock",
