@@ -4,12 +4,24 @@ import Image from "next/image";
 import { useState } from "react";
 
 type Show = {
+  id: string;
   date: string;
   venue: string;
   city: string;
   note: string;
   flyer?: string;
-  tickets?: string;
+  tickets?:
+    | {
+        type: "venmo";
+        price: number;
+        venmoUrl: string;
+        qrCode?: string;
+      }
+    | {
+        type: "external";
+        url: string;
+        label?: string;
+      };
 };
 
 type Track = {
@@ -33,25 +45,45 @@ export default function Home() {
 
   const upcomingShows: Show[] = [
     {
-      date: "June 6, 2026",
-      venue: "SRS Denver",
+      id: "HHSS-2026-07-31",
+      date: "July 31, 2026",
+      venue: "HHSS Adult Swim Night",
       city: "Denver, CO",
-      note: "Special Guest The Magpies  - 6PM",
-      flyer: "/images/20260606_SRSFlyer.png",
+      note: "7-11pm",
+      flyer: "/images/20260731_HHSS.png",
+      tickets: {
+           type: "external",
+           url: "https://hampdenheights.org/adults-night-only-july-2-17/",
+           label: "Buy Tickets",
+      },
     },
     {
+      id: "globehall-2026-08-09",
       date: "August 9, 2026",
       venue: "Globe Hall",
       city: "Denver, CO",
-      note: "with Pennysick   Doors 4PM, Show 5PM",
-      flyer: "/images/20260809_GlobeHall.png",
-      tickets: "coming soon"
+      note: "21+ with Pennysick, Soundkick, and Eduardo & Co   Doors 4PM, Show 5PM",
+      flyer: "/images/20260809_GlobeHall.pdf",
+      tickets: {
+          type: "venmo",
+          price: 15,
+          venmoUrl: "https://www.venmo.com/u/PocketFuzz",
+          qrCode: "/images/PF-Venmo_qr.png",
+          },
     },
     {
+      id: "Southmoor-2026-08-29",
       date: "August 29, 2026",
       venue: "Southmoor Rocks, Location TBD",
       city: "Denver, CO",
       note: "Supporting Southmoor Elementary",
+    },
+    {
+      id: "moes-2026-09-11",
+      date: "September 11, 2026",
+      venue: "Moe's Original BBQ",
+      city: "Englewood, CO",
+      note: "Info and Tickets Coming Soon",
     },
   ];
 
@@ -110,6 +142,7 @@ export default function Home() {
   const defaultVideo = "https://www.youtube.com/embed/tSciqx4_ieY";
   const [activeVideo, setActiveVideo] = useState(defaultVideo);
   const [activeTitle, setActiveTitle] = useState("Pocket Fuzz");
+  const [ticketQty, setTicketQty] = useState<Record<string, number>>({});
 
   const gallery: string[] = [
     "/images/PF_PROMO1.jpg",
@@ -228,9 +261,9 @@ export default function Home() {
             {upcomingShows.map((show) => (
               <div
                 key={`${show.date}-${show.venue}`}
-                className="grid gap-3 border border-stone-800 bg-black/30 p-6 md:grid-cols-[180px_1fr_auto] md:items-center"
+                className="grid gap-3 border border-stone-800 bg-black/30 p-6 md:grid-cols-[220px_1fr_auto] md:items-center"
               >
-                <div className="text-sm font-black uppercase tracking-[0.2em] text-red-500">
+                <div className="whitespace-nowrap text-sm font-black uppercase tracking-[0.2em] text-red-500">
                   {show.date}
                 </div>
                 <div>
@@ -257,18 +290,84 @@ export default function Home() {
                 <div className="flex flex-col items-end gap-2">
                 <div className="text-sm uppercase tracking-wider text-stone-400">
                                 {show.note}
-                 </div>
+                </div>
 
-                                {show.tickets && (
-                               <a
-                                     href={show.tickets}
-                                     target="_blank"
-                                     rel="noopener noreferrer"
-                                    className="rounded border border-red-600 bg-red-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-red-700"
-                               >
-                               Buy Tickets
-                              </a>
-                              )}
+                {show.tickets?.type === "external" && (
+                    <a
+                        href={show.tickets.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="border border-red-600 bg-red-600 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white transition hover:bg-red-700"
+                    >
+                       {show.tickets.label ?? "Buy Tickets"}
+                   </a>
+                 )}
+
+                 {show.tickets?.type === "venmo" && (
+                           <details className="w-full md:w-auto">
+                               <summary className="cursor-pointer list-none border border-red-600 bg-red-600 px-4 py-2 text-center text-xs font-black uppercase tracking-[0.18em] text-white hover:bg-red-700">
+                                    Buy Tickets — ${show.tickets.price}
+                               </summary>
+
+                               <div className="mt-3 w-full border border-stone-700 bg-[#0a0908] p-5 md:w-[320px]">
+                                    <p className="text-lg font-black uppercase text-white">
+                                        {show.venue}
+                                    </p>
+
+                                    <p className="mt-2 text-sm text-stone-400">
+                                         ${show.tickets.price} per ticket
+                                    </p>
+
+                                    <label className="mt-5 block text-xs font-bold uppercase tracking-wider text-stone-500">
+                                          Number of tickets
+                                    </label>
+
+                                    <select
+                                        value={ticketQty[show.id] ?? 1}
+                                        onChange={(e) =>
+                                            setTicketQty((current) => ({
+                                                ...current,
+                                                [show.id]: Number(e.target.value),
+                                            }))
+                                        }
+                                        className="mt-2 w-full border border-stone-700 bg-black px-3 py-3 text-white"
+                                     >
+                                        <option value={1}>1 Ticket</option>
+                                        <option value={2}>2 Tickets</option>
+                                        <option value={3}>3 Tickets</option>
+                                        <option value={4}>4 Tickets</option>
+                                     </select>
+
+                                     <p className="mt-4 text-lg font-bold text-white">
+                                          Total: $
+                                          {show.tickets.price * (ticketQty[show.id] ?? 1)}
+                                     </p>
+
+
+                                     <a
+                                          href={show.tickets.venmoUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="mt-5 block border border-red-600 bg-red-600 px-5 py-3 text-center text-sm font-black uppercase tracking-[0.18em] text-white hover:bg-red-700"
+                                     >
+                                          Pay with Venmo
+                                     </a>
+
+                                     <div className="mx-auto mt-5 max-w-[180px] bg-white p-3">
+                                          <img
+                                                src={show.tickets.qrCode}
+                                                alt={`Venmo QR code for ${show.venue} tickets`}
+                                                className="w-full"
+                                          />
+                                     </div>
+
+                                     <p className="mt-4 text-center text-xs leading-5 text-stone-500">
+                                             Include your full name, email, show date, and number of tickets in the Venmo
+                                             payment note.
+                                     </p>
+                                </div>
+                 </details>
+                   )}
                  </div>
               </div>
             ))}
