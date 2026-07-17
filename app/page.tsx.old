@@ -534,48 +534,43 @@ export default function Home() {
               </p>
             </div>
           </div>
-        </div>
-      </section>
+          <div className="mt-8 flex items-center justify-center gap-6">
+             <a
+                 href="https://instagram.com/pocketfuzzmusic"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 aria-label="Instagram"
+                 className="text-stone-300 transition hover:text-red-500"
+              >
+                 <FaInstagram size={28} />
+              </a>
 
-      <footer className="border-t border-stone-900 px-6 py-8">
-       <div className="mx-auto flex max-w-7xl flex-col items-center gap-6">
-       <div className="flex items-center justify-center gap-10">
-           <a
-             href="https://instagram.com/pocketfuzzmusic"
-             target="_blank"
-             rel="noopener noreferrer"
-             aria-label="Instagram"
-             className="text-stone-400 transition hover:text-red-500"
-           >
-             <FaInstagram size={36} />
-           </a>
+              <a
+                  href="https://facebook.com/PocketFuzzMusic"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook"
+                  className="text-stone-300 transition hover:text-red-500"
+               >
+                   <FaFacebookF size={26} />
+              </a>
 
-           <a
-             href="https://facebook.com/PocketFuzzMusic"
-             target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Facebook"
-            className="text-stone-400 transition hover:text-red-500"
-           >
-             <FaFacebookF size={34} />
-          </a>
-
-           <a
-             href="https://youtube.com/@PocketFuzz-music"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="YouTube"
-            className="text-stone-400 transition hover:text-red-500"
-           >
-             <FaYoutube size={44} />
-           </a>
+              <a
+                   href="https://youtube.com/@PocketFuzz-music"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   aria-label="YouTube"
+                   className="text-stone-300 transition hover:text-red-500"
+               >
+                  <FaYoutube size={30} />
+               </a>
          </div>
 
-         <p className="text-center text-xs uppercase tracking-[0.25em] text-stone-600">
-          Pocket Fuzz • Garage Rock From Denver
-         </p>
-        </div>
-     </footer>
+      </section>
+
+      <footer className="border-t border-stone-900 px-6 py-8 text-center text-xs uppercase tracking-[0.25em] text-stone-600">
+        Pocket Fuzz • Garage Rock From Denver
+      </footer>
     </div>
   );
 }
