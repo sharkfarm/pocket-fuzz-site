@@ -551,7 +551,7 @@ export default function Home() {
            </a>
 
            <a
-             href="https://facebook.com/PocketFuzzMusic"
+             href="https://facebook.com/PocketFuzzDenver"
              target="_blank"
             rel="noopener noreferrer"
             aria-label="Facebook"
