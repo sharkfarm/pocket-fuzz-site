@@ -62,7 +62,7 @@ export default function Home() {
            price: 10,
 //           url: "https://hampdenheights.org/adults-night-only-july-2-17/",
            venmoUrl: "https://www.venmo.com/u/PocketFuzz",
-           label: "Buy Tickets",
+//           label: "Buy Tickets",
            qrCode: "/images/PF-Venmo_qr.png",
       },
     },
