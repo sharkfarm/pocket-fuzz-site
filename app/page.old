@@ -1,0 +1,585 @@
+"use client";
+
+import Image from "next/image";
+import { useState } from "react";
+import {
+  FaInstagram,
+  FaFacebookF,
+  FaYoutube,
+} from "react-icons/fa";
+
+type Show = {
+  id: string;
+  date: string;
+  venue: string;
+  city: string;
+  note: string;
+  flyer?: string;
+  tickets?:
+    | {
+        type: "venmo";
+        price: number;
+        venmoUrl: string;
+        qrCode?: string;
+      }
+    | {
+        type: "external";
+        url: string;
+        label?: string;
+      };
+};
+
+type Track = {
+  title: string;
+  length: string;
+  video: string;
+};
+
+export default function Home() {
+  const band = {
+    name: "Pocket Fuzz",
+    tagline: "Fuzzed-out riffs. Big drums. No wasted motion.",
+    city: "Denver, Colorado",
+    genre: "Garage Rock / 3-Piece / Alternative Rock",
+    description:
+      "Pocket Fuzz is a stripped-down rock band built on blown-out guitar, driving bass, hard-hitting drums, and songs that hit fast and stay loud.",
+    email: "info@pocket-fuzz.com",
+    instagram: "https://instagram.com/pocketfuzzmusic",
+    youtube: "https://youtube.com/@PocketFuzz-music",
+  };
+
+  const upcomingShows: Show[] = [
+    {
+      id: "HHSS-2026-07-31",
+      date: "July 31, 2026",
+      venue: "HHSS Adult Swim Night",
+      city: "Denver, CO",
+      note: "7-11pm",
+      flyer: "/images/20260731_HHSS.png",
+      tickets: {
+//           type: "external",
+           type: "venmo",
+           price: 10,
+//           url: "https://hampdenheights.org/adults-night-only-july-2-17/",
+           venmoUrl: "https://www.venmo.com/u/PocketFuzz",
+//           label: "Buy Tickets",
+           qrCode: "/images/PF-Venmo_qr.png",
+      },
+    },
+    {
+      id: "globehall-2026-08-09",
+      date: "August 9, 2026",
+      venue: "Globe Hall",
+      city: "Denver, CO",
+      note: "21+ with Pennysick, Soundkick, and Eduardo & Co   Doors 4PM, Show 5PM",
+      flyer: "/images/20260809_GlobeHall.pdf",
+      tickets: {
+          type: "venmo",
+          price: 15,
+          venmoUrl: "https://www.venmo.com/u/PocketFuzz",
+          qrCode: "/images/PF-Venmo_qr.png",
+          },
+    },
+    {
+      id: "Southmoor-2026-08-29",
+      date: "August 29, 2026",
+      venue: "Southmoor Rocks, Location TBD",
+      city: "Denver, CO",
+      note: "Supporting Southmoor Elementary",
+    },
+    {
+      id: "moes-2026-09-11",
+      date: "September 11, 2026",
+      venue: "Moe's Original BBQ",
+      city: "Englewood, CO",
+      note: "Info and Tickets Coming Soon",
+    },
+  ];
+
+  const tracks: Track[] = [
+  	 {
+	    title: "Helter Skelter",
+	    length: "1:30",
+	    video: "https://www.youtube.com/embed//wBSYCASy_18",
+	  },{
+	    title: "Bound For The Floor",
+	    length: "3:37",
+	    video: "https://www.youtube.com/embed/2JklaYDFttU",
+	  },
+	  {
+	    title: "Steady As She Goes",
+	    length: "1:22",
+	    video: "https://www.youtube.com/embed/l5bQi1h6jGw",
+	  },
+	  {
+	    title: "Dead Leaves and the Dirty Ground",
+	    length: "1:18",
+	    video: "https://www.youtube.com/embed/huulztoXRbM",
+	  },
+	  {
+	    title: "Paint It Black",
+	    length: "3:05",
+	    video: "https://www.youtube.com/embed/oMzyYgtgFLk",
+	  },
+ 	 {
+	    title: "Good",
+	    length: "1:56",
+	    video: "https://www.youtube.com/embed/Gr73N4mguNo",
+	  },
+	  {
+	    title: "Flagpole Sitta",
+	    length: "3:32",
+	    video: "https://www.youtube.com/embed/9YIOrQKTYFo",
+	  },
+	   {
+	    title: "Hey Jealousy",
+	    length: "2:11",
+	    video: "https://www.youtube.com/embed/r9EvcaGu7aQ",
+	  },
+ 	  {
+	    title: "Rocky Mountain Way",
+	    length: "3:02",
+	    video: "https://www.youtube.com/embed/nlISx06ph0c",
+	  },
+	  {
+	    title: "Your Touch",
+ 	    length: "1:23",
+	    video: "https://www.youtube.com/embed/34BI1aPoK5w",
+	},
+  ];
+
+  const defaultVideo = "https://www.youtube.com/embed/tSciqx4_ieY";
+  const [activeVideo, setActiveVideo] = useState(defaultVideo);
+  const [activeTitle, setActiveTitle] = useState("Pocket Fuzz");
+  const [ticketQty, setTicketQty] = useState<Record<string, number>>({});
+
+  const gallery: string[] = [
+    "/images/PF_PROMO1.jpg",
+    "/images/PF_PROMO3.jpg",
+    "/images/PF_PROMO2.jpg",
+    "/images/Brandon1.png",
+    "/images/Ricky1.png",
+    "/images/Bobby1.png",
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#0a0908] text-stone-100">
+      <header className="border-b border-stone-800 bg-[#0a0908]">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+          <div>
+            <div className="text-2xl font-black uppercase tracking-[0.25em]">
+              {band.name}
+            </div>
+            <div className="text-xs uppercase tracking-[0.2em] text-stone-500">
+              {band.genre}
+            </div>
+          </div>
+          <nav className="hidden gap-6 text-sm uppercase tracking-widest md:flex">
+            <a href="#about" className="text-stone-400 hover:text-white">
+              About
+            </a>
+            <a href="#shows" className="text-stone-400 hover:text-white">
+              Shows
+            </a>
+            <a href="#music" className="text-stone-400 hover:text-white">
+              Music
+            </a>
+            <a href="#gallery" className="text-stone-400 hover:text-white">
+              Photos
+            </a>
+            <a href="#contact" className="text-stone-400 hover:text-white">
+              Contact
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      <section className="border-b border-stone-900">
+        <div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 md:grid-cols-2 md:items-center md:py-24">
+	<div>
+            <p className="mb-4 text-xs font-bold uppercase tracking-[0.35em] text-red-500">
+              Denver Garage Rock
+            </p>
+            <h1 className="max-w-4xl text-6xl font-black uppercase leading-[0.9] tracking-tight text-stone-100 md:text-8xl">
+              <Image
+  		src="/images/Pocket-Fuzz-LogoT.png"
+		  alt="Pocket Fuzz"
+		  width={200}
+		  height={60}
+		  className="h-100 w-auto"
+	      />
+            </h1>
+            <p className="mt-6 max-w-xl text-xl font-semibold text-stone-300">
+              {band.tagline}
+            </p>
+            <p className="mt-6 max-w-xl text-base leading-8 text-stone-400">
+              {band.description}
+            </p>
+            <div className="mt-8 flex flex-wrap gap-4">
+              <a
+                href="#music"
+                className="rounded-none border border-red-600 bg-red-600 px-6 py-3 text-sm font-black uppercase tracking-[0.2em] text-white transition hover:translate-y-[-1px]"
+              >
+                Listen
+              </a>
+              <a
+                href="#shows"
+                className="rounded-none border border-stone-700 px-6 py-3 text-sm font-black uppercase tracking-[0.2em] text-stone-200 transition hover:border-stone-400"
+              >
+                Shows
+              </a>
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="absolute -left-4 -top-4 h-full w-full border border-red-700/50" />
+            <img
+              src="/images/PocketFuzz1.png"
+              alt="Pocket Fuzz live"
+              className="relative h-[460px] w-full border border-stone-800 object-cover"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section id="about" className="mx-auto max-w-7xl px-6 py-16">
+        <div className="grid gap-8 md:grid-cols-[1fr_2fr]">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
+              About
+            </p>
+            <h2 className="mt-4 text-4xl font-black uppercase">Built Loud.</h2>
+          </div>
+          <div className="border-l-4 border-red-600 pl-6 text-lg leading-9 text-stone-300">
+            Pocket Fuzz plays lean, dirty, riff-heavy rock with zero extra
+            gloss. It is the kind of set that works in a small club, a loud
+            bar, or a room full of people who want guitars that sound like they
+            are about to break. Tight songs, big groove, and enough fuzz to make
+            the walls sweat.
+          </div>
+        </div>
+      </section>
+
+      <section id="shows" className="bg-[#11100f] px-6 py-16">
+        <div className="mx-auto max-w-7xl">
+          <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
+            Shows
+          </p>
+          <h2 className="mt-4 text-4xl font-black uppercase">Upcoming Dates</h2>
+          <div className="mt-8 grid gap-4">
+            {upcomingShows.map((show) => (
+              <div
+                key={`${show.date}-${show.venue}`}
+                className="grid gap-3 border border-stone-800 bg-black/30 p-6 md:grid-cols-[220px_1fr_auto] md:items-center"
+              >
+                <div className="whitespace-nowrap text-sm font-black uppercase tracking-[0.2em] text-red-500">
+                  {show.date}
+                </div>
+                <div>
+		  {show.flyer ? (
+		    <a
+		      href={show.flyer}
+		      target="_blank"
+		      rel="noopener noreferrer"
+		      className="text-2xl font-bold uppercase hover:text-red-500"
+		    >
+		      {show.venue}
+		    </a>
+		  ) : (
+		    <div className="text-2xl font-bold uppercase">
+		      {show.venue}
+		    </div>
+		  )}
+		
+		  <div className="text-sm uppercase tracking-wider text-stone-500">
+		    {show.city}
+		  </div>
+		</div>
+
+                <div className="flex flex-col items-end gap-2">
+                <div className="text-sm uppercase tracking-wider text-stone-400">
+                                {show.note}
+                </div>
+
+                {show.tickets?.type === "external" && (
+                    <a
+                        href={show.tickets.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="border border-red-600 bg-red-600 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white transition hover:bg-red-700"
+                    >
+                       {show.tickets.label ?? "Buy Tickets"}
+                   </a>
+                 )}
+
+                 {show.tickets?.type === "venmo" && (
+                           <details className="w-full md:w-auto">
+                               <summary className="cursor-pointer list-none border border-red-600 bg-red-600 px-4 py-2 text-center text-xs font-black uppercase tracking-[0.18em] text-white hover:bg-red-700">
+                                    Buy Tickets — ${show.tickets.price}
+                               </summary>
+
+                               <div className="mt-3 w-full border border-stone-700 bg-[#0a0908] p-5 md:w-[320px]">
+                                    <p className="text-lg font-black uppercase text-white">
+                                        {show.venue}
+                                    </p>
+
+                                    <p className="mt-2 text-sm text-stone-400">
+                                         ${show.tickets.price} per ticket
+                                    </p>
+
+                                    <label className="mt-5 block text-xs font-bold uppercase tracking-wider text-stone-500">
+                                          Number of tickets
+                                    </label>
+
+                                    <select
+                                        value={ticketQty[show.id] ?? 1}
+                                        onChange={(e) =>
+                                            setTicketQty((current) => ({
+                                                ...current,
+                                                [show.id]: Number(e.target.value),
+                                            }))
+                                        }
+                                        className="mt-2 w-full border border-stone-700 bg-black px-3 py-3 text-white"
+                                     >
+                                        <option value={1}>1 Ticket</option>
+                                        <option value={2}>2 Tickets</option>
+                                        <option value={3}>3 Tickets</option>
+                                        <option value={4}>4 Tickets</option>
+                                     </select>
+
+                                     <p className="mt-4 text-lg font-bold text-white">
+                                          Total: $
+                                          {show.tickets.price * (ticketQty[show.id] ?? 1)}
+                                     </p>
+
+
+                                     <a
+                                          href={show.tickets.venmoUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="mt-5 block border border-red-600 bg-red-600 px-5 py-3 text-center text-sm font-black uppercase tracking-[0.18em] text-white hover:bg-red-700"
+                                     >
+                                          Pay with Venmo
+                                     </a>
+
+                                     <div className="mx-auto mt-5 max-w-[180px] bg-white p-3">
+                                          <img
+                                                src={show.tickets.qrCode}
+                                                alt={`Venmo QR code for ${show.venue} tickets`}
+                                                className="w-full"
+                                          />
+                                     </div>
+
+                                     <p className="mt-4 text-center text-xs leading-5 text-stone-500">
+                                             Include your full name, email, show date, and number of tickets in the Venmo
+                                             payment note.
+                                     </p>
+                                </div>
+                 </details>
+                   )}
+                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="music" className="mx-auto max-w-7xl px-6 py-16">
+        <div className="grid gap-8 md:grid-cols-2">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
+              Music
+            </p>
+            <h2 className="mt-4 text-4xl font-black uppercase">Tracks</h2>
+            <div className="mt-8 border-t border-stone-800">
+              {tracks.map((track, index) => (
+                <div
+                  key={track.title}
+                  className="grid grid-cols-[60px_1fr_auto] items-center border-b border-stone-800 py-5"
+                >
+                  <div className="text-sm font-black text-stone-500">
+                    {String(index + 1).padStart(2, "0")}
+                  </div>
+                  <div>
+		    <button
+		      type="button"
+		      onClick={() => {
+	    	        const autoplayUrl = `${track.video}?autoplay=1&mute=0`;
+  			setActiveVideo(autoplayUrl);
+			setActiveTitle(track.title);
+
+		        setTimeout(() => {
+ 		        setActiveVideo(defaultVideo);
+		        }, 120000); // 2 minutes (adjust per your clips)
+		      }}
+		      className={`text-left text-xl font-bold uppercase hover:text-red-500 ${
+	 	      activeTitle === track.title ? "text-red-500" : "text-stone-100"
+		     }`}
+		    >
+	    	     {track.title}
+		    </button>
+                  </div>
+
+                  <div className="text-sm text-stone-500">
+		      {track.length}
+		  </div>
+                </div>
+              ))}
+            </div>
+	    <div className="mt-6 flex gap-4">
+              <a
+                href={band.youtube}
+                className="border border-stone-700 px-5 py-3 text-sm font-black uppercase tracking-[0.2em] text-stone-200 hover:border-white"
+              >
+                YouTube
+              </a>
+            </div>
+          </div>
+
+          <div className="border border-stone-800 bg-[#11100f] p-8">
+            <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
+              Featured Video
+            </p>
+             <div className="mt-6 border border-stone-700 bg-black p-2">
+	      <iframe
+	        className="w-full aspect-video"
+	        src={activeVideo}
+	        title="Pocket Fuzz video"
+	        frameBorder="0"
+	        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+	        allowFullScreen
+	        referrerPolicy="strict-origin-when-cross-origin"
+	      ></iframe>
+	    </div>
+
+	    <p className="mt-4 text-sm uppercase tracking-[0.2em] text-stone-500">
+	      Now playing:{" "}
+	      <span className="text-red-500">
+	        {activeTitle || "Featured Video"}
+	      </span>
+	    </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="gallery" className="bg-[#11100f] px-6 py-16">
+        <div className="mx-auto max-w-7xl">
+          <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
+            Photos
+          </p>
+          <h2 className="mt-4 text-4xl font-black uppercase">
+            Live / Loud / Dirty
+          </h2>
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            {gallery.map((image, index) => (
+              <img
+                key={image}
+                src={image}
+                alt={`Pocket Fuzz photo ${index + 1}`}
+                className="h-80 w-full border border-stone-800 object-cover"
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+	<section id="upload" className="mx-auto max-w-7xl px-6 py-16">
+	  <div className="border border-stone-800 bg-[#11100f] p-8 text-center">
+	    <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
+	      Share Your Shots
+	    </p>
+
+	    <h2 className="mt-4 text-4xl font-black uppercase">
+	      Upload Photos & Videos
+	    </h2>
+
+	    <p className="mx-auto mt-4 max-w-xl text-stone-400">
+	      Got photos or video from a Pocket Fuzz show? Send them our way.
+	    </p>
+
+	    <a
+	      href="https://docs.google.com/forms/d/e/1FAIpQLScnVtYpYno16eOY0yoQVgFX_8wIA1aoXpX0LPNv5ZVo3S5_xA/viewform?usp=publish-editor"
+	      target="_blank"
+	      rel="noopener noreferrer"
+	      className="mt-8 inline-block border border-red-600 bg-red-600 px-6 py-3 text-sm font-black uppercase tracking-[0.2em] text-white hover:bg-red-700"
+	    >
+	      Upload Files
+	    </a>
+
+	    <div className="mx-auto mt-8 max-w-[220px] border border-stone-700 bg-white p-3">
+	      <img
+	        src="/images/pf-download-qrcode.png"
+	        alt="QR code to upload Pocket Fuzz photos and videos"
+	        className="w-full"
+	      />
+	    </div>
+
+	    <p className="mt-4 text-xs uppercase tracking-[0.2em] text-stone-500">
+	      Scan to upload
+	    </p>
+	  </div>
+	</section>
+
+      <section id="contact" className="mx-auto max-w-7xl px-6 py-16">
+        <div className="grid gap-8 md:grid-cols-2">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
+              Contact
+            </p>
+            <h2 className="mt-4 text-4xl font-black uppercase">Booking</h2>
+            <div className="mt-6 space-y-4 text-lg text-stone-300">
+              <p>
+                <a
+                  href={`mailto:${band.email}?subject=Live%20Show%20Inquiry`}
+                  className="text-red-500 hover:text-red-400"
+                >
+                  {band.email}
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-stone-900 px-6 py-8">
+       <div className="mx-auto flex max-w-7xl flex-col items-center gap-6">
+       <div className="flex items-center justify-center gap-10">
+           <a
+             href="https://instagram.com/pocketfuzzmusic"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="Instagram"
+             className="text-stone-400 transition hover:text-red-500"
+           >
+             <FaInstagram size={36} />
+           </a>
+
+           <a
+             href="https://facebook.com/PocketFuzzDenver"
+             target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Facebook"
+            className="text-stone-400 transition hover:text-red-500"
+           >
+             <FaFacebookF size={34} />
+          </a>
+
+           <a
+             href="https://youtube.com/@PocketFuzz-music"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="YouTube"
+            className="text-stone-400 transition hover:text-red-500"
+           >
+             <FaYoutube size={44} />
+           </a>
+         </div>
+
+         <p className="text-center text-xs uppercase tracking-[0.25em] text-stone-600">
+          Pocket Fuzz • Garage Rock From Denver
+         </p>
+        </div>
+     </footer>
+    </div>
+  );
+}

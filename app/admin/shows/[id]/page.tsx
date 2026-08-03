@@ -9,6 +9,7 @@ import {
   deleteMerchSale,
   deleteShowPayment,
   duplicateShow,
+  deleteShow,
   toggleExpenseReimbursed,
   toggleShowPayment,
   updateExpense,
@@ -18,6 +19,7 @@ import {
   updateShowPayment,
   updateTicketSales,
 } from "./actions";
+import DeleteShowButton from "./delete-show-button";
 
 type ShowDetailPageProps = {
   params: Promise<{
@@ -1366,6 +1368,28 @@ export default async function ShowDetailPage({
               />
             </div>
           </div>
+        </section>
+        <section className="mt-8 rounded-2xl border border-red-950 bg-stone-900 p-6">
+          <h2 className="text-xl font-black uppercase text-red-400">
+           Danger Zone
+          </h2>
+
+         <p className="mt-2 text-sm text-stone-400">
+            Permanently delete this show and all associated financial
+           records.
+         </p>
+
+         <form action={deleteShow} className="mt-6">
+            <input
+             type="hidden"
+              name="show_id"
+             value={id}
+            />
+
+            <DeleteShowButton
+             showName={show.show_name || "Untitled Show"}
+            />
+          </form>
         </section>
       </div>
     </main>

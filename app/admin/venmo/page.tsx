@@ -1,16 +1,58 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { approveVenmoOrder, declineVenmoOrder } from "./actions";
+import {
+  approveVenmoOrder,
+  declineVenmoOrder,
+  deleteVenmoOrder,
+} from "./actions";
 
-type PageProps = { searchParams: Promise<{ saved?: string; error?: string }> };
+type OrderFilter =
+  | "pending"
+  | "submitted"
+  | "approved"
+  | "declined"
+  | "all";
 
-export default async function VenmoAdminPage({ searchParams }: PageProps) {
+type PageProps = {
+  searchParams: Promise<{
+    saved?: string;
+    error?: string;
+    status?: string;
+  }>;
+};
+
+const validFilters: OrderFilter[] = [
+  "pending",
+  "submitted",
+  "approved",
+  "declined",
+  "all",
+];
+
+export default async function VenmoAdminPage({
+  searchParams,
+}: PageProps) {
   const query = await searchParams;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/admin/login");
 
-  const { data: orders, error } = await supabase
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/admin/login");
+  }
+
+  const requestedStatus = String(query.status ?? "submitted");
+
+  const activeFilter: OrderFilter = validFilters.includes(
+    requestedStatus as OrderFilter
+  )
+    ? (requestedStatus as OrderFilter)
+    : "submitted";
+
+  let ordersQuery = supabase
     .from("venmo_orders")
     .select(`
       id,
@@ -21,47 +63,137 @@ export default async function VenmoAdminPage({ searchParams }: PageProps) {
       expected_amount,
       status,
       submitted_at,
-      shows(show_name,show_date),
-      venmo_order_items(item_name,item_option,quantity,line_total)
+      created_at,
+      shows (
+        show_name,
+        show_date
+      ),
+      venmo_order_items (
+        item_name,
+        item_option,
+        quantity,
+        line_total
+      )
     `)
-    .in("status", ["submitted", "pending"])
     .order("created_at", { ascending: false });
+
+  if (activeFilter !== "all") {
+    ordersQuery = ordersQuery.eq("status", activeFilter);
+  }
+
+  const { data: orders, error } = await ordersQuery;
 
   return (
     <main className="min-h-screen bg-stone-950 px-6 py-10 text-stone-100">
       <div className="mx-auto max-w-6xl">
-        <p className="text-xs font-black uppercase tracking-[0.3em] text-red-500">Pocket Fuzz</p>
-        <h1 className="mt-3 text-4xl font-black uppercase">Venmo Payments</h1>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-red-500">
+              Pocket Fuzz
+            </p>
 
-        {query.saved ? <div className="mt-6 rounded-lg border border-emerald-900 bg-emerald-950/40 p-4 text-emerald-200">Order {query.saved}.</div> : null}
-        {query.error || error ? <div className="mt-6 rounded-lg border border-red-900 bg-red-950/50 p-4 text-red-200">{query.error ?? error?.message}</div> : null}
+            <h1 className="mt-3 text-4xl font-black uppercase">
+              Venmo Payments
+            </h1>
+          </div>
+
+          <Link
+            href="/admin/shows"
+            className="w-fit rounded-lg border border-stone-700 px-4 py-3 text-sm font-bold hover:border-stone-500"
+          >
+            Back to Shows
+          </Link>
+        </div>
+
+        {query.saved ? (
+          <div className="mt-6 rounded-lg border border-emerald-900 bg-emerald-950/40 p-4 text-emerald-200">
+            {getSavedMessage(query.saved)}
+          </div>
+        ) : null}
+
+        {query.error || error ? (
+          <div className="mt-6 rounded-lg border border-red-900 bg-red-950/50 p-4 text-red-200">
+            {query.error ?? error?.message}
+          </div>
+        ) : null}
+
+        <nav className="mt-8 flex flex-wrap gap-3">
+          {validFilters.map((filter) => (
+            <Link
+              key={filter}
+              href={`/admin/venmo?status=${filter}`}
+              className={
+                activeFilter === filter
+                  ? "rounded-lg bg-red-600 px-4 py-2 text-sm font-black uppercase text-white"
+                  : "rounded-lg border border-stone-700 px-4 py-2 text-sm font-black uppercase text-stone-300 hover:border-stone-500"
+              }
+            >
+              {formatFilterLabel(filter)}
+            </Link>
+          ))}
+        </nav>
 
         <div className="mt-8 space-y-5">
           {(orders ?? []).map((order) => {
-            const show = Array.isArray(order.shows) ? order.shows[0] : order.shows;
+            const show = Array.isArray(order.shows)
+              ? order.shows[0]
+              : order.shows;
+
             return (
-              <article key={order.id} className="rounded-2xl border border-stone-800 bg-stone-900 p-6">
+              <article
+                key={order.id}
+                className="rounded-2xl border border-stone-800 bg-stone-900 p-6"
+              >
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div>
-                    <p className="text-sm text-stone-500">{order.order_number}</p>
-                    <h2 className="mt-1 text-2xl font-black">{order.customer_name}</h2>
-                    <p className="text-stone-400">@{order.venmo_username || "not submitted"} · {order.customer_email}</p>
-                    <p className="mt-2 text-sm text-stone-500">{show?.show_name || "Show"}</p>
+                    <p className="text-sm text-stone-500">
+                      {order.order_number}
+                    </p>
+
+                    <h2 className="mt-1 text-2xl font-black">
+                      {order.customer_name}
+                    </h2>
+
+                    <p className="text-stone-400">
+                      @{order.venmo_username || "not submitted"} ·{" "}
+                      {order.customer_email}
+                    </p>
+
+                    <p className="mt-2 text-sm text-stone-500">
+                      {show?.show_name || "Show"}
+                      {show?.show_date
+                        ? ` · ${formatDate(show.show_date)}`
+                        : ""}
+                    </p>
                   </div>
+
                   <div className="text-left md:text-right">
-                    <p className="text-3xl font-black">{formatCurrency(Number(order.expected_amount))}</p>
-                    <p className="mt-1 text-xs font-bold uppercase text-amber-300">{order.status}</p>
+                    <p className="text-3xl font-black">
+                      {formatCurrency(Number(order.expected_amount))}
+                    </p>
+
+                    <span className={getStatusClass(order.status)}>
+                      {order.status}
+                    </span>
                   </div>
                 </div>
 
                 <div className="mt-5 space-y-2 border-t border-stone-800 pt-5">
                   {(order.venmo_order_items ?? []).map((item, index) => (
-                    <div key={`${item.item_name}-${index}`} className="flex justify-between text-sm">
+                    <div
+                      key={`${item.item_name}-${index}`}
+                      className="flex justify-between gap-4 text-sm"
+                    >
                       <span>
                         {item.quantity} × {item.item_name}
-                        {item.item_option ? ` — Size ${item.item_option}` : ""}
+                        {item.item_option
+                          ? ` — Size ${item.item_option}`
+                          : ""}
                       </span>
-                      <span>{formatCurrency(Number(item.line_total))}</span>
+
+                      <span>
+                        {formatCurrency(Number(item.line_total))}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -69,12 +201,61 @@ export default async function VenmoAdminPage({ searchParams }: PageProps) {
                 {order.status === "submitted" ? (
                   <div className="mt-6 flex flex-wrap gap-3">
                     <form action={approveVenmoOrder}>
-                      <input type="hidden" name="order_id" value={order.id} />
-                      <button className="rounded-lg bg-emerald-600 px-5 py-3 font-black uppercase hover:bg-emerald-500">Approve</button>
+                      <input
+                        type="hidden"
+                        name="order_id"
+                        value={order.id}
+                      />
+
+                      <button className="rounded-lg bg-emerald-600 px-5 py-3 font-black uppercase hover:bg-emerald-500">
+                        Approve
+                      </button>
                     </form>
+
                     <form action={declineVenmoOrder}>
-                      <input type="hidden" name="order_id" value={order.id} />
-                      <button className="rounded-lg border border-red-700 px-5 py-3 font-black uppercase text-red-300 hover:bg-red-950">Decline</button>
+                      <input
+                        type="hidden"
+                        name="order_id"
+                        value={order.id}
+                      />
+
+                      <button className="rounded-lg border border-red-700 px-5 py-3 font-black uppercase text-red-300 hover:bg-red-950">
+                        Decline
+                      </button>
+                    </form>
+
+                    <form action={deleteVenmoOrder}>
+                      <input
+                        type="hidden"
+                        name="order_id"
+                        value={order.id}
+                      />
+
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-stone-700 px-5 py-3 font-black uppercase text-stone-300 hover:border-red-700 hover:text-red-300"
+                      >
+                        Delete Test Order
+                      </button>
+                    </form>
+                  </div>
+                ) : null}
+
+                {order.status === "pending" ? (
+                  <div className="mt-6">
+                    <form action={deleteVenmoOrder}>
+                      <input
+                        type="hidden"
+                        name="order_id"
+                        value={order.id}
+                      />
+
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-stone-700 px-5 py-3 font-black uppercase text-stone-300 hover:border-red-700 hover:text-red-300"
+                      >
+                        Delete Test Order
+                      </button>
                     </form>
                   </div>
                 ) : null}
@@ -82,13 +263,73 @@ export default async function VenmoAdminPage({ searchParams }: PageProps) {
             );
           })}
 
-          {(orders ?? []).length === 0 ? <div className="rounded-2xl border border-stone-800 bg-stone-900 p-10 text-center text-stone-500">No pending Venmo orders.</div> : null}
+          {(orders ?? []).length === 0 ? (
+            <div className="rounded-2xl border border-stone-800 bg-stone-900 p-10 text-center text-stone-500">
+              No {formatFilterLabel(activeFilter).toLowerCase()} Venmo orders.
+            </div>
+          ) : null}
         </div>
       </div>
     </main>
   );
 }
 
+function getSavedMessage(saved: string) {
+  switch (saved) {
+    case "approved":
+      return "Order approved.";
+    case "declined":
+      return "Order declined.";
+    case "deleted":
+      return "Venmo order deleted.";
+    default:
+      return `Order ${saved}.`;
+  }
+}
+
+function formatFilterLabel(filter: OrderFilter) {
+  switch (filter) {
+    case "pending":
+      return "Pending";
+    case "submitted":
+      return "Submitted";
+    case "approved":
+      return "Approved";
+    case "declined":
+      return "Declined";
+    case "all":
+      return "All";
+  }
+}
+
+function getStatusClass(status: string) {
+  const base =
+    "mt-2 inline-block rounded-full border px-3 py-1 text-xs font-bold uppercase";
+
+  switch (status) {
+    case "approved":
+      return `${base} border-emerald-800 bg-emerald-950/40 text-emerald-300`;
+    case "declined":
+      return `${base} border-red-800 bg-red-950/40 text-red-300`;
+    case "submitted":
+      return `${base} border-amber-800 bg-amber-950/40 text-amber-300`;
+    default:
+      return `${base} border-stone-700 bg-stone-950 text-stone-300`;
+  }
+}
+
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(value);
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00Z`));
 }

@@ -795,3 +795,39 @@ export async function deleteShowPayment(formData: FormData) {
   revalidatePath(`/admin/shows/${showId}`);
   redirect(`/admin/shows/${showId}?saved=payment-deleted`);
 }
+
+export async function deleteShow(formData: FormData) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/admin/login");
+  }
+
+  const showId = String(formData.get("show_id") ?? "");
+
+  if (!showId) {
+    throw new Error("Show ID is missing.");
+  }
+
+  const { error } = await supabase.rpc("delete_show_cascade", {
+    p_show_id: showId,
+  });
+
+  if (error) {
+    redirect(
+      `/admin/shows/${showId}?error=${encodeURIComponent(
+        error.message
+      )}`
+    );
+  }
+
+  revalidatePath("/admin/shows");
+  revalidatePath("/admin/reports");
+  revalidatePath("/shows");
+
+  redirect("/admin/shows?deleted=true");
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import {
   FaInstagram,
@@ -8,25 +9,27 @@ import {
   FaYoutube,
 } from "react-icons/fa";
 
-type Show = {
+export type PublicHomeShow = {
   id: string;
-  date: string;
-  venue: string;
-  city: string;
-  note: string;
-  flyer?: string;
-  tickets?:
+  show_name: string | null;
+  show_date: string;
+  start_time: string | null;
+  public_slug: string;
+  public_description: string | null;
+  flyer_url: string | null;
+  featured: boolean;
+  venues:
     | {
-        type: "venmo";
-        price: number;
-        venmoUrl: string;
-        qrCode?: string;
+        name: string | null;
+        city: string | null;
+        state: string | null;
       }
-    | {
-        type: "external";
-        url: string;
-        label?: string;
-      };
+    | Array<{
+        name: string | null;
+        city: string | null;
+        state: string | null;
+      }>
+    | null;
 };
 
 type Track = {
@@ -35,7 +38,11 @@ type Track = {
   video: string;
 };
 
-export default function Home() {
+export default function HomeClient({
+  upcomingShows,
+}: {
+  upcomingShows: PublicHomeShow[];
+}) {
   const band = {
     name: "Pocket Fuzz",
     tagline: "Fuzzed-out riffs. Big drums. No wasted motion.",
@@ -47,50 +54,6 @@ export default function Home() {
     instagram: "https://instagram.com/pocketfuzzmusic",
     youtube: "https://youtube.com/@PocketFuzz-music",
   };
-
-  const upcomingShows: Show[] = [
-    {
-      id: "HHSS-2026-07-31",
-      date: "July 31, 2026",
-      venue: "HHSS Adult Swim Night",
-      city: "Denver, CO",
-      note: "7-11pm",
-      flyer: "/images/20260731_HHSS.png",
-      tickets: {
-           type: "external",
-           url: "https://hampdenheights.org/adults-night-only-july-2-17/",
-           label: "Buy Tickets",
-      },
-    },
-    {
-      id: "globehall-2026-08-09",
-      date: "August 9, 2026",
-      venue: "Globe Hall",
-      city: "Denver, CO",
-      note: "21+ with Pennysick, Soundkick, and Eduardo & Co   Doors 4PM, Show 5PM",
-      flyer: "/images/20260809_GlobeHall.pdf",
-      tickets: {
-          type: "venmo",
-          price: 15,
-          venmoUrl: "https://www.venmo.com/u/PocketFuzz",
-          qrCode: "/images/PF-Venmo_qr.png",
-          },
-    },
-    {
-      id: "Southmoor-2026-08-29",
-      date: "August 29, 2026",
-      venue: "Southmoor Rocks, Location TBD",
-      city: "Denver, CO",
-      note: "Supporting Southmoor Elementary",
-    },
-    {
-      id: "moes-2026-09-11",
-      date: "September 11, 2026",
-      venue: "Moe's Original BBQ",
-      city: "Englewood, CO",
-      note: "Info and Tickets Coming Soon",
-    },
-  ];
 
   const tracks: Track[] = [
   	 {
@@ -147,7 +110,6 @@ export default function Home() {
   const defaultVideo = "https://www.youtube.com/embed/tSciqx4_ieY";
   const [activeVideo, setActiveVideo] = useState(defaultVideo);
   const [activeTitle, setActiveTitle] = useState("Pocket Fuzz");
-  const [ticketQty, setTicketQty] = useState<Record<string, number>>({});
 
   const gallery: string[] = [
     "/images/PF_PROMO1.jpg",
@@ -258,125 +220,98 @@ export default function Home() {
 
       <section id="shows" className="bg-[#11100f] px-6 py-16">
         <div className="mx-auto max-w-7xl">
-          <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
-            Shows
-          </p>
-          <h2 className="mt-4 text-4xl font-black uppercase">Upcoming Dates</h2>
-          <div className="mt-8 grid gap-4">
-            {upcomingShows.map((show) => (
-              <div
-                key={`${show.date}-${show.venue}`}
-                className="grid gap-3 border border-stone-800 bg-black/30 p-6 md:grid-cols-[220px_1fr_auto] md:items-center"
-              >
-                <div className="whitespace-nowrap text-sm font-black uppercase tracking-[0.2em] text-red-500">
-                  {show.date}
-                </div>
-                <div>
-		  {show.flyer ? (
-		    <a
-		      href={show.flyer}
-		      target="_blank"
-		      rel="noopener noreferrer"
-		      className="text-2xl font-bold uppercase hover:text-red-500"
-		    >
-		      {show.venue}
-		    </a>
-		  ) : (
-		    <div className="text-2xl font-bold uppercase">
-		      {show.venue}
-		    </div>
-		  )}
-		
-		  <div className="text-sm uppercase tracking-wider text-stone-500">
-		    {show.city}
-		  </div>
-		</div>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
+                Shows
+              </p>
 
-                <div className="flex flex-col items-end gap-2">
-                <div className="text-sm uppercase tracking-wider text-stone-400">
-                                {show.note}
-                </div>
+              <h2 className="mt-4 text-4xl font-black uppercase">
+                Upcoming Dates
+              </h2>
+            </div>
 
-                {show.tickets?.type === "external" && (
-                    <a
-                        href={show.tickets.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="border border-red-600 bg-red-600 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white transition hover:bg-red-700"
-                    >
-                       {show.tickets.label ?? "Buy Tickets"}
-                   </a>
-                 )}
-
-                 {show.tickets?.type === "venmo" && (
-                           <details className="w-full md:w-auto">
-                               <summary className="cursor-pointer list-none border border-red-600 bg-red-600 px-4 py-2 text-center text-xs font-black uppercase tracking-[0.18em] text-white hover:bg-red-700">
-                                    Buy Tickets — ${show.tickets.price}
-                               </summary>
-
-                               <div className="mt-3 w-full border border-stone-700 bg-[#0a0908] p-5 md:w-[320px]">
-                                    <p className="text-lg font-black uppercase text-white">
-                                        {show.venue}
-                                    </p>
-
-                                    <p className="mt-2 text-sm text-stone-400">
-                                         ${show.tickets.price} per ticket
-                                    </p>
-
-                                    <label className="mt-5 block text-xs font-bold uppercase tracking-wider text-stone-500">
-                                          Number of tickets
-                                    </label>
-
-                                    <select
-                                        value={ticketQty[show.id] ?? 1}
-                                        onChange={(e) =>
-                                            setTicketQty((current) => ({
-                                                ...current,
-                                                [show.id]: Number(e.target.value),
-                                            }))
-                                        }
-                                        className="mt-2 w-full border border-stone-700 bg-black px-3 py-3 text-white"
-                                     >
-                                        <option value={1}>1 Ticket</option>
-                                        <option value={2}>2 Tickets</option>
-                                        <option value={3}>3 Tickets</option>
-                                        <option value={4}>4 Tickets</option>
-                                     </select>
-
-                                     <p className="mt-4 text-lg font-bold text-white">
-                                          Total: $
-                                          {show.tickets.price * (ticketQty[show.id] ?? 1)}
-                                     </p>
-
-
-                                     <a
-                                          href={show.tickets.venmoUrl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="mt-5 block border border-red-600 bg-red-600 px-5 py-3 text-center text-sm font-black uppercase tracking-[0.18em] text-white hover:bg-red-700"
-                                     >
-                                          Pay with Venmo
-                                     </a>
-
-                                     <div className="mx-auto mt-5 max-w-[180px] bg-white p-3">
-                                          <img
-                                                src={show.tickets.qrCode}
-                                                alt={`Venmo QR code for ${show.venue} tickets`}
-                                                className="w-full"
-                                          />
-                                     </div>
-
-                                     <p className="mt-4 text-center text-xs leading-5 text-stone-500">
-                                             Include your full name, email, show date, and number of tickets in the Venmo
-                                             payment note.
-                                     </p>
-                                </div>
-                 </details>
-                   )}
-                 </div>
-              </div>
-            ))}
+            <Link
+              href="/shows"
+              className="text-sm font-black uppercase tracking-[0.18em] text-stone-400 hover:text-white"
+            >
+              View All Shows →
+            </Link>
           </div>
+
+          {upcomingShows.length > 0 ? (
+            <div className="mt-8 grid gap-4">
+              {upcomingShows.map((show) => {
+                const venue = Array.isArray(show.venues)
+                  ? show.venues[0]
+                  : show.venues;
+
+                return (
+                  <article
+                    key={show.id}
+                    className="grid gap-5 border border-stone-800 bg-black/30 p-6 md:grid-cols-[220px_1fr_auto] md:items-center"
+                  >
+                    <div className="whitespace-nowrap text-sm font-black uppercase tracking-[0.2em] text-red-500">
+                      {formatShowDate(show.show_date)}
+                    </div>
+
+                    <div>
+                      {show.featured ? (
+                        <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-red-400">
+                          Featured Show
+                        </p>
+                      ) : null}
+
+                      <h3 className="text-2xl font-bold uppercase">
+                        {show.show_name || "Pocket Fuzz Show"}
+                      </h3>
+
+                      <p className="mt-2 text-sm uppercase tracking-wider text-stone-500">
+                        {venue?.name || "Venue TBA"}
+                        {venue?.city
+                          ? ` · ${venue.city}${venue.state ? `, ${venue.state}` : ""}`
+                          : ""}
+                      </p>
+
+                      <p className="mt-2 text-sm uppercase tracking-wider text-stone-400">
+                        {formatShowTime(show.start_time)}
+                      </p>
+
+                      {show.public_description ? (
+                        <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-400">
+                          {show.public_description}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div className="flex flex-col gap-3 md:items-end">
+                      {show.flyer_url ? (
+                        <a
+                          href={show.flyer_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-black uppercase tracking-[0.18em] text-stone-400 hover:text-white"
+                        >
+                          View Flyer
+                        </a>
+                      ) : null}
+
+                      <Link
+                        href={`/shows/${show.public_slug}`}
+                        className="border border-red-600 bg-red-600 px-5 py-3 text-center text-xs font-black uppercase tracking-[0.18em] text-white transition hover:bg-red-700"
+                      >
+                        Tickets & Details
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="mt-8 border border-stone-800 bg-black/30 p-8 text-stone-400">
+              New shows coming soon.
+            </div>
+          )}
         </div>
       </section>
 
@@ -534,43 +469,71 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <div className="mt-8 flex items-center justify-center gap-6">
-             <a
-                 href="https://instagram.com/pocketfuzzmusic"
-                 target="_blank"
-                 rel="noopener noreferrer"
-                 aria-label="Instagram"
-                 className="text-stone-300 transition hover:text-red-500"
-              >
-                 <FaInstagram size={28} />
-              </a>
-
-              <a
-                  href="https://facebook.com/PocketFuzzMusic"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Facebook"
-                  className="text-stone-300 transition hover:text-red-500"
-               >
-                   <FaFacebookF size={26} />
-              </a>
-
-              <a
-                   href="https://youtube.com/@PocketFuzz-music"
-                   target="_blank"
-                   rel="noopener noreferrer"
-                   aria-label="YouTube"
-                   className="text-stone-300 transition hover:text-red-500"
-               >
-                  <FaYoutube size={30} />
-               </a>
-         </div>
-
+        </div>
       </section>
 
-      <footer className="border-t border-stone-900 px-6 py-8 text-center text-xs uppercase tracking-[0.25em] text-stone-600">
-        Pocket Fuzz • Garage Rock From Denver
-      </footer>
+      <footer className="border-t border-stone-900 px-6 py-8">
+       <div className="mx-auto flex max-w-7xl flex-col items-center gap-6">
+       <div className="flex items-center justify-center gap-10">
+           <a
+             href="https://instagram.com/pocketfuzzmusic"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="Instagram"
+             className="text-stone-400 transition hover:text-red-500"
+           >
+             <FaInstagram size={36} />
+           </a>
+
+           <a
+             href="https://facebook.com/PocketFuzzDenver"
+             target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Facebook"
+            className="text-stone-400 transition hover:text-red-500"
+           >
+             <FaFacebookF size={34} />
+          </a>
+
+           <a
+             href="https://youtube.com/@PocketFuzz-music"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="YouTube"
+            className="text-stone-400 transition hover:text-red-500"
+           >
+             <FaYoutube size={44} />
+           </a>
+         </div>
+
+         <p className="text-center text-xs uppercase tracking-[0.25em] text-stone-600">
+          Pocket Fuzz • Garage Rock From Denver
+         </p>
+        </div>
+     </footer>
     </div>
   );
+}
+
+function formatShowDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00Z`));
+}
+
+function formatShowTime(value: string | null) {
+  if (!value) {
+    return "Time TBA";
+  }
+
+  const [hour, minute] = value.split(":").map(Number);
+
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(2000, 0, 1, hour, minute));
 }
