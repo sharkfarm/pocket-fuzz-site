@@ -11,7 +11,41 @@ export default async function NewShowPage({ searchParams }: NewShowPageProps) {
   if (!user) redirect("/admin/login");
 
   const [{ data: venues }, { data: members }] = await Promise.all([
-    supabase.from("venues").select("id,name,default_capacity,default_ticket_goal,default_number_of_acts,default_doors_time,default_start_time,default_end_time,radius_clause_weeks,radius_clause_miles,food_discount_percent,meals_included_ticket_threshold").order("name"),
+    supabase
+      .from("venues")
+      .select(`
+        id,
+        name,
+        city,
+        state,
+        default_capacity,
+        default_ticket_goal,
+        default_number_of_acts,
+        default_doors_time,
+        default_start_time,
+        default_end_time,
+        radius_clause_weeks,
+        radius_clause_miles,
+        food_discount_percent,
+        meals_included_ticket_threshold,
+        facility_fee_per_ticket,
+        package_expenses,
+        deal_base_percent,
+        deal_tier_1_threshold,
+        deal_tier_1_percent,
+        deal_tier_2_threshold,
+        deal_tier_2_percent,
+        venue_ticket_defaults (
+          id,
+          ticket_type,
+          channel,
+          ticket_price,
+          display_order,
+          active
+        )
+      `)
+      .eq("active", true)
+      .order("name"),
     supabase.from("band_members").select("id,name,default_split_percent").eq("active", true).order("sort_order").order("name"),
   ]);
 

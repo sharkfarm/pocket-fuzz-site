@@ -16,9 +16,57 @@ export async function updateTicketSales(formData: FormData) {
   }
 
   const showId = String(formData.get("show_id") ?? "");
+  const facilityFeePerTicket = Number(formData.get("facility_fee_per_ticket") ?? 2);
+  const packageExpenses = Number(formData.get("package_expenses") ?? 250);
+  const dealBasePercent = Number(formData.get("deal_base_percent") ?? 50);
+  const dealTier1Threshold = Number(formData.get("deal_tier_1_threshold") ?? 50);
+  const dealTier1Percent = Number(formData.get("deal_tier_1_percent") ?? 60);
+  const dealTier2Threshold = Number(formData.get("deal_tier_2_threshold") ?? 100);
+  const dealTier2Percent = Number(formData.get("deal_tier_2_percent") ?? 70);
 
   if (!showId) {
     throw new Error("Show ID is missing.");
+  }
+
+  const dealValues = [
+    facilityFeePerTicket,
+    packageExpenses,
+    dealBasePercent,
+    dealTier1Threshold,
+    dealTier1Percent,
+    dealTier2Threshold,
+    dealTier2Percent,
+  ];
+
+  if (
+    dealValues.some((value) => !Number.isFinite(value) || value < 0) ||
+    !Number.isInteger(dealTier1Threshold) ||
+    !Number.isInteger(dealTier2Threshold) ||
+    dealTier2Threshold < dealTier1Threshold ||
+    dealBasePercent > 100 ||
+    dealTier1Percent > 100 ||
+    dealTier2Percent > 100
+  ) {
+    redirect(`/admin/shows/${showId}?error=${encodeURIComponent(
+      "Deal terms must be valid. Tier 2 must be at or above Tier 1, and percentages cannot exceed 100."
+    )}`);
+  }
+
+  const { error: dealError } = await supabase
+    .from("shows")
+    .update({
+      facility_fee_per_ticket: facilityFeePerTicket,
+      package_expenses: packageExpenses,
+      deal_base_percent: dealBasePercent,
+      deal_tier_1_threshold: dealTier1Threshold,
+      deal_tier_1_percent: dealTier1Percent,
+      deal_tier_2_threshold: dealTier2Threshold,
+      deal_tier_2_percent: dealTier2Percent,
+    })
+    .eq("id", showId);
+
+  if (dealError) {
+    redirect(`/admin/shows/${showId}?error=${encodeURIComponent(dealError.message)}`);
   }
 
   const ticketIds = formData.getAll("ticket_id").map(String);
@@ -211,6 +259,7 @@ export async function addMerchSale(formData: FormData) {
 
   const showId = String(formData.get("show_id") ?? "");
   const itemName = String(formData.get("item_name") ?? "").trim();
+  const size = String(formData.get("size") ?? "").trim();
   const quantitySold = Number(formData.get("quantity_sold") ?? 0);
   const unitPrice = Number(formData.get("unit_price") ?? 0);
   const unitCost = Number(formData.get("unit_cost") ?? 0);
@@ -244,6 +293,7 @@ export async function addMerchSale(formData: FormData) {
   const { error } = await supabase.from("merch_sales").insert({
     show_id: showId,
     item_name: itemName,
+    size: size || null,
     quantity_sold: quantitySold,
     unit_price: unitPrice,
     unit_cost: unitCost,
@@ -588,6 +638,7 @@ export async function updateMerchSale(formData: FormData) {
   const showId = String(formData.get("show_id") ?? "");
   const merchId = String(formData.get("merch_id") ?? "");
   const itemName = String(formData.get("item_name") ?? "").trim();
+  const size = String(formData.get("size") ?? "").trim();
   const quantitySold = Number(formData.get("quantity_sold") ?? 0);
   const unitPrice = Number(formData.get("unit_price") ?? 0);
   const unitCost = Number(formData.get("unit_cost") ?? 0);
@@ -605,6 +656,7 @@ export async function updateMerchSale(formData: FormData) {
     .from("merch_sales")
     .update({
       item_name: itemName,
+      size: size || null,
       quantity_sold: quantitySold,
       unit_price: unitPrice,
       unit_cost: unitCost,

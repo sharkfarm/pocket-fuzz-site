@@ -59,6 +59,7 @@ type MerchSale = {
   unit_price: number | string;
   unit_cost: number | string;
   payment_method: string | null;
+  size: string | null;
 };
 
 type ShowPayment = {
@@ -116,6 +117,13 @@ export default async function ShowDetailPage({
           radius_clause_miles,
           food_discount_percent,
           meals_included_ticket_threshold,
+          facility_fee_per_ticket,
+          package_expenses,
+          deal_base_percent,
+          deal_tier_1_threshold,
+          deal_tier_1_percent,
+          deal_tier_2_threshold,
+          deal_tier_2_percent,
           notes,
           venues (
             name
@@ -164,6 +172,7 @@ export default async function ShowDetailPage({
         `
           id,
           item_name,
+          size,
           quantity_sold,
           unit_price,
           unit_cost,
@@ -229,6 +238,33 @@ export default async function ShowDetailPage({
   );
 
   const merchProfit = merchRevenue - merchCost;
+  const grossTicketRevenue = Number(show.gross_ticket_sales);
+  const actualTickets = Number(show.tickets_sold);
+  const facilityFeePerTicket = Number(showDetails.facility_fee_per_ticket ?? 2);
+  const packageExpenses = Number(showDetails.package_expenses ?? 250);
+  const dealBasePercent = Number(showDetails.deal_base_percent ?? 50);
+  const dealTier1Threshold = Number(showDetails.deal_tier_1_threshold ?? 50);
+  const dealTier1Percent = Number(showDetails.deal_tier_1_percent ?? 60);
+  const dealTier2Threshold = Number(showDetails.deal_tier_2_threshold ?? 100);
+  const dealTier2Percent = Number(showDetails.deal_tier_2_percent ?? 70);
+  const actualPayoutRate = getDealRate(actualTickets, {
+    basePercent: dealBasePercent,
+    tier1Threshold: dealTier1Threshold,
+    tier1Percent: dealTier1Percent,
+    tier2Threshold: dealTier2Threshold,
+    tier2Percent: dealTier2Percent,
+  });
+  const actualDealNet = Math.max(
+    0,
+    grossTicketRevenue -
+      actualTickets * facilityFeePerTicket -
+      packageExpenses
+  );
+  const bandTicketPayout = actualDealNet * actualPayoutRate;
+  const otherIncome = Number(show.other_income ?? 0);
+  const ticketNet =
+    grossTicketRevenue + otherIncome - bandTicketPayout - totalActualExpenses;
+  const calculatedTotalShowProfit = ticketNet + merchProfit;
   const totalAssignedPayments = showPayments.reduce(
     (total, payment) => total + Number(payment.amount),
     0
@@ -236,7 +272,7 @@ export default async function ShowDetailPage({
   const totalPaidPayments = showPayments
     .filter((payment) => payment.paid)
     .reduce((total, payment) => total + Number(payment.amount), 0);
-  const unassignedProfit = Number(show.net_show_profit) - totalAssignedPayments;
+  const unassignedProfit = calculatedTotalShowProfit - totalAssignedPayments;
 
   const projectedTickets = tickets.reduce(
     (total, ticket) => total + Number(ticket.projected_quantity),
@@ -251,10 +287,21 @@ export default async function ShowDetailPage({
     0
   );
 
-  const projectedPayoutRate = getPayoutRate(projectedTickets);
-  const projectedPayout = projectedGross * projectedPayoutRate;
+  const projectedPayoutRate = getDealRate(projectedTickets, {
+    basePercent: dealBasePercent,
+    tier1Threshold: dealTier1Threshold,
+    tier1Percent: dealTier1Percent,
+    tier2Threshold: dealTier2Threshold,
+    tier2Percent: dealTier2Percent,
+  });
+  const projectedDealNet = Math.max(
+    0,
+    projectedGross -
+      projectedTickets * facilityFeePerTicket -
+      packageExpenses
+  );
+  const projectedPayout = projectedDealNet * projectedPayoutRate;
 
-  const actualTickets = Number(show.tickets_sold);
   const capacity = Number(show.capacity);
 
   return (
@@ -391,7 +438,7 @@ export default async function ShowDetailPage({
 
           <MetricCard
             label="Payout Tier"
-            value={`${Math.round(Number(show.payout_rate) * 100)}%`}
+            value={`${Math.round(actualPayoutRate * 100)}%`}
             secondary={getTierMessage(
               actualTickets,
               Number(show.tickets_to_next_tier)
@@ -400,12 +447,12 @@ export default async function ShowDetailPage({
 
           <MetricCard
             label="Band Payout"
-            value={formatCurrency(Number(show.ticket_payout))}
+            value={formatCurrency(bandTicketPayout)}
           />
 
           <MetricCard
             label="Net Show Profit"
-            value={formatCurrency(Number(show.net_show_profit))}
+            value={formatCurrency(calculatedTotalShowProfit)}
           />
         </section>
 
@@ -595,17 +642,41 @@ export default async function ShowDetailPage({
         <section className="mt-8 overflow-hidden rounded-2xl border border-stone-800 bg-stone-900">
           <div className="border-b border-stone-800 px-6 py-5">
             <h2 className="text-xl font-black uppercase">
-              Ticket Sales
+              Venue Ticket Sales
             </h2>
 
             <p className="mt-1 text-sm text-stone-400">
-              Enter projected quantities before the show and actual
-              quantities as tickets are sold.
+              Admission prices and quantities for {show.venue_name || "this venue"}.
+              Merchandise revenue is tracked separately and does not affect the
+              venue ticket payout.
             </p>
+          </div>
+
+          <div className="grid gap-4 border-b border-stone-800 p-6 sm:grid-cols-2 xl:grid-cols-5">
+            <ExpenseMetric label="Projected Tickets" value={String(projectedTickets)} />
+            <ExpenseMetric label="Projected Gross" value={formatCurrency(projectedGross)} />
+            <ExpenseMetric label="Actual Tickets" value={String(actualTickets)} />
+            <ExpenseMetric label="Ticket Revenue" value={formatCurrency(grossTicketRevenue)} />
+            <ExpenseMetric label="Band Ticket Payout" value={formatCurrency(bandTicketPayout)} />
           </div>
 
           <form action={updateTicketSales}>
             <input type="hidden" name="show_id" value={id} />
+
+            <div className="grid gap-4 border-b border-stone-800 p-6 sm:grid-cols-2 xl:grid-cols-4">
+              <ExpenseField label="Facility Fee / Ticket" name="facility_fee_per_ticket" type="number" min="0" step="0.01" defaultValue={facilityFeePerTicket.toFixed(2)} />
+              <ExpenseField label="Package Expenses" name="package_expenses" type="number" min="0" step="0.01" defaultValue={packageExpenses.toFixed(2)} />
+              <ExpenseField label="Base Deal %" name="deal_base_percent" type="number" min="0" step="0.01" defaultValue={String(dealBasePercent)} />
+              <ExpenseField label="Tier 1 Tickets" name="deal_tier_1_threshold" type="number" min="0" step="1" defaultValue={String(dealTier1Threshold)} />
+              <ExpenseField label="Tier 1 Deal %" name="deal_tier_1_percent" type="number" min="0" step="0.01" defaultValue={String(dealTier1Percent)} />
+              <ExpenseField label="Tier 2 Tickets" name="deal_tier_2_threshold" type="number" min="0" step="1" defaultValue={String(dealTier2Threshold)} />
+              <ExpenseField label="Tier 2 Deal %" name="deal_tier_2_percent" type="number" min="0" step="0.01" defaultValue={String(dealTier2Percent)} />
+              <div className="rounded-lg border border-stone-700 bg-stone-950 p-4 text-sm text-stone-300">
+                <p className="font-black uppercase">Current Calculation</p>
+                <p className="mt-2">Gross less {formatCurrency(facilityFeePerTicket)} × {actualTickets} tickets and {formatCurrency(packageExpenses)} package expenses.</p>
+                <p className="mt-2 font-bold">Payout basis: {formatCurrency(actualDealNet)}</p>
+              </div>
+            </div>
 
             <div className="overflow-x-auto">
               <table className="w-full min-w-[850px] text-left">
@@ -919,11 +990,12 @@ export default async function ShowDetailPage({
         <section className="mt-8 overflow-hidden rounded-2xl border border-stone-800 bg-stone-900">
           <div className="border-b border-stone-800 px-6 py-5">
             <h2 className="text-xl font-black uppercase">
-              Merchandise
+              Merchandise Sales
             </h2>
 
             <p className="mt-1 text-sm text-stone-400">
-              Track show-specific merchandise sales and profit.
+              Merchandise is a separate revenue stream. It is excluded from
+              ticket counts, ticket revenue, payout tiers, and venue settlement.
             </p>
           </div>
 
@@ -953,7 +1025,7 @@ export default async function ShowDetailPage({
                       <div className="flex flex-wrap items-center justify-between gap-4">
                         <div>
                           <p className="font-bold">{item.item_name}</p>
-                          <p className="text-sm text-stone-400">{item.quantity_sold} sold · {item.payment_method || "—"}</p>
+                          <p className="text-sm text-stone-400">{item.quantity_sold} sold{item.size ? ` · Size ${item.size}` : ""} · {item.payment_method || "—"}</p>
                         </div>
                         <div className="text-right">
                           <p className="font-bold">{formatCurrency(revenue - cost)} profit</p>
@@ -961,10 +1033,11 @@ export default async function ShowDetailPage({
                         </div>
                       </div>
                     </summary>
-                    <form action={updateMerchSale} className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                    <form action={updateMerchSale} className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-6">
                       <input type="hidden" name="show_id" value={id} />
                       <input type="hidden" name="merch_id" value={item.id} />
                       <ExpenseField label="Item" name="item_name" defaultValue={item.item_name} required />
+                      <ExpenseField label="Size" name="size" defaultValue={item.size ?? ""} placeholder="S, M, L, XL" />
                       <ExpenseField label="Quantity" name="quantity_sold" type="number" min="0" step="1" defaultValue={String(item.quantity_sold)} />
                       <ExpenseField label="Price Each" name="unit_price" type="number" min="0" step="0.01" defaultValue={String(item.unit_price)} />
                       <ExpenseField label="Cost Each" name="unit_cost" type="number" min="0" step="0.01" defaultValue={String(item.unit_cost)} />
@@ -974,7 +1047,7 @@ export default async function ShowDetailPage({
                           <option value="cash">Cash</option><option value="venmo">Venmo</option><option value="card">Card</option><option value="other">Other</option>
                         </select>
                       </div>
-                      <div className="md:col-span-2 xl:col-span-5 flex justify-end gap-3">
+                      <div className="md:col-span-2 xl:col-span-6 flex justify-end gap-3">
                         <button className="rounded-lg bg-red-600 px-5 py-2 font-bold">Save Merchandise</button>
                       </div>
                     </form>
@@ -1005,12 +1078,17 @@ export default async function ShowDetailPage({
               Add Merchandise Sale
             </h3>
 
-            <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-5">
+            <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-6">
               <ExpenseField
                 label="Item"
                 name="item_name"
                 placeholder="T-Shirt"
                 required
+              />
+              <ExpenseField
+                label="Size"
+                name="size"
+                placeholder="S, M, L, XL"
               />
               <ExpenseField
                 label="Quantity Sold"
@@ -1076,9 +1154,18 @@ export default async function ShowDetailPage({
            </h2>
 
            <p className="mt-1 text-sm text-stone-400">
-              Enter any additional income and mark the show complete
-              after the final payout is confirmed.
+              Finalize ticket settlement separately from merchandise. Other
+              income is included with ticket/show operations; merch remains its
+              own revenue, cost, and profit calculation.
            </p>
+          </div>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <ExpenseMetric label="Ticket Revenue" value={formatCurrency(grossTicketRevenue)} />
+            <ExpenseMetric label="Band Ticket Payout" value={formatCurrency(bandTicketPayout)} />
+            <ExpenseMetric label="Show Expenses" value={formatCurrency(totalActualExpenses)} />
+            <ExpenseMetric label="Ticket Net" value={formatCurrency(ticketNet)} />
+            <ExpenseMetric label="Merch Profit" value={formatCurrency(merchProfit)} />
           </div>
 
          <form
@@ -1260,7 +1347,7 @@ export default async function ShowDetailPage({
 
          <div className="mt-6 space-y-4">
             <SummaryRow
-              label="Gross ticket sales"
+              label="Ticket revenue"
              value={formatCurrency(
                Number(show.gross_ticket_sales)
               )}
@@ -1268,20 +1355,20 @@ export default async function ShowDetailPage({
 
            <SummaryRow
              label={`Band payout (${Math.round(
-                Number(show.payout_rate) * 100
+                actualPayoutRate * 100
               )}%)`}
               value={formatCurrency(
-               Number(show.ticket_payout)
+               bandTicketPayout
               )}
            />
 
            <SummaryRow
-             label="Merchandise revenue"
+             label="Merch revenue (separate)"
              value={formatCurrency(merchRevenue)}
            />
 
            <SummaryRow
-             label="Merchandise cost"
+             label="Merch cost (separate)"
              value={`-${formatCurrency(merchCost)}`}
            />
 
@@ -1293,16 +1380,22 @@ export default async function ShowDetailPage({
            />
 
             <SummaryRow
-              label="Show expenses"
+              label="Ticket/show expenses"
              value={`-${formatCurrency(totalActualExpenses)}`}
            />
 
            <div className="border-t border-stone-700 pt-5">
               <SummaryRow
-               label="Final net show profit"
-               value={formatCurrency(
-                  Number(show.net_show_profit)
-               )}
+                label="Ticket net"
+                value={formatCurrency(ticketNet)}
+              />
+              <SummaryRow
+                label="Merch profit"
+                value={formatCurrency(merchProfit)}
+              />
+              <SummaryRow
+               label="Total show profit"
+               value={formatCurrency(calculatedTotalShowProfit)}
                emphasize
               />
            </div>
@@ -1528,25 +1621,40 @@ function ExpenseField({
   );
 }
 
-function getPayoutRate(ticketCount: number) {
-  if (ticketCount >= 50) return 0.7;
-  if (ticketCount >= 30) return 0.6;
-  if (ticketCount >= 10) return 0.5;
-  return 0;
+function getDealRate(
+  ticketCount: number,
+  deal: {
+    basePercent: number;
+    tier1Threshold: number;
+    tier1Percent: number;
+    tier2Threshold: number;
+    tier2Percent: number;
+  }
+) {
+  if (ticketCount >= deal.tier2Threshold) {
+    return deal.tier2Percent / 100;
+  }
+
+  if (ticketCount >= deal.tier1Threshold) {
+    return deal.tier1Percent / 100;
+  }
+
+  return deal.basePercent / 100;
 }
 
 function getTierMessage(
   ticketsSold: number,
-  ticketsToNextTier: number
+  _ticketsToNextTier: number
 ) {
-  if (ticketsSold >= 50) {
-    return "Highest payout tier";
+  if (ticketsSold >= 100) {
+    return "70% deal tier";
   }
 
-  const target =
-    ticketsSold < 10 ? 10 : ticketsSold < 30 ? 30 : 50;
+  if (ticketsSold >= 50) {
+    return `${100 - ticketsSold} more to reach 70%`;
+  }
 
-  return `${ticketsToNextTier} more to reach ${target}`;
+  return `${50 - ticketsSold} more to reach 60%`;
 }
 
 function trimTime(value: string | null) {
