@@ -72,6 +72,10 @@ export async function updateTicketSales(formData: FormData) {
   const ticketIds = formData.getAll("ticket_id").map(String);
 
   for (const ticketId of ticketIds) {
+    const ticketType = String(
+      formData.get(`ticket_type_${ticketId}`) ?? ""
+    ).trim();
+
     const price = Number(
       formData.get(`ticket_price_${ticketId}`) ?? 0
     );
@@ -85,6 +89,7 @@ export async function updateTicketSales(formData: FormData) {
     );
 
     if (
+      !ticketType ||
       !Number.isFinite(price) ||
       !Number.isInteger(projectedQuantity) ||
       !Number.isInteger(actualQuantity) ||
@@ -102,6 +107,7 @@ export async function updateTicketSales(formData: FormData) {
     const { error } = await supabase
       .from("ticket_sales")
       .update({
+        ticket_type: ticketType,
         ticket_price: price,
         projected_quantity: projectedQuantity,
         actual_quantity: actualQuantity,
@@ -123,6 +129,51 @@ export async function updateTicketSales(formData: FormData) {
 
   redirect(`/admin/shows/${showId}?saved=tickets`);
 }
+
+export async function addTicketType(formData: FormData) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/admin/login");
+
+  const showId = String(formData.get("show_id") ?? "");
+  const ticketType = String(formData.get("ticket_type") ?? "").trim();
+  const ticketPrice = Number(formData.get("ticket_price") ?? 0);
+  const projectedQuantity = Number(
+    formData.get("projected_quantity") ?? 0
+  );
+
+  if (!showId || !ticketType) {
+    redirect(
+      `/admin/shows/${showId}?error=${encodeURIComponent(
+        "Ticket type is required."
+      )}`
+    );
+  }
+
+  const { error } = await supabase.from("ticket_sales").insert({
+    show_id: showId,
+    ticket_type: ticketType,
+    channel: "Presale",
+    ticket_price: ticketPrice,
+    projected_quantity: projectedQuantity,
+    actual_quantity: 0,
+  });
+
+  if (error) {
+    redirect(
+      `/admin/shows/${showId}?error=${encodeURIComponent(error.message)}`
+    );
+  }
+
+  revalidatePath(`/admin/shows/${showId}`);
+
+  redirect(`/admin/shows/${showId}?saved=ticket-added`);
+}
+
 export async function addExpense(formData: FormData) {
   const supabase = await createClient();
 
@@ -206,6 +257,35 @@ export async function addExpense(formData: FormData) {
   revalidatePath(`/admin/shows/${showId}`);
 
   redirect(`/admin/shows/${showId}?saved=expense`);
+}
+
+export async function deleteTicketType(formData: FormData) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/admin/login");
+
+  const showId = String(formData.get("show_id") ?? "");
+  const ticketId = String(formData.get("ticket_id") ?? "");
+
+  const { error } = await supabase
+    .from("ticket_sales")
+    .delete()
+    .eq("id", ticketId)
+    .eq("show_id", showId);
+
+  if (error) {
+    redirect(
+      `/admin/shows/${showId}?error=${encodeURIComponent(error.message)}`
+    );
+  }
+
+  revalidatePath(`/admin/shows/${showId}`);
+
+  redirect(`/admin/shows/${showId}?saved=ticket-deleted`);
 }
 
 export async function deleteExpense(formData: FormData) {

@@ -5,6 +5,8 @@ import {
   addExpense,
   addMerchSale,
   addShowPayment,
+  addTicketType,
+  deleteTicketType,
   deleteExpense,
   deleteMerchSale,
   deleteShowPayment,
@@ -350,6 +352,14 @@ export default async function ShowDetailPage({
           <SuccessMessage>Ticket sales updated.</SuccessMessage>
         ) : null}
 
+        {query.saved === "ticket-added" ? (
+          <SuccessMessage>Ticket type added.</SuccessMessage>
+        ) : null}
+
+        {query.saved === "ticket-deleted" ? (
+          <SuccessMessage>Ticket type deleted.</SuccessMessage>
+        ) : null}
+
         {query.saved === "expense" ? (
           <SuccessMessage>Expense added.</SuccessMessage>
         ) : null}
@@ -688,6 +698,7 @@ export default async function ShowDetailPage({
                     <th className="px-6 py-4">Projected</th>
                     <th className="px-6 py-4">Actual Sold</th>
                     <th className="px-6 py-4">Revenue</th>
+                    <th className="px-6 py-4">Actions</th>
                   </tr>
                 </thead>
 
@@ -708,7 +719,11 @@ export default async function ShowDetailPage({
                             name="ticket_id"
                             value={ticket.id}
                           />
-                          {ticket.ticket_type}
+                          <input
+                           name={`ticket_type_${ticket.id}`}
+                            defaultValue={ticket.ticket_type}
+                           className="w-full rounded-lg border border-stone-700 bg-stone-950 px-3 py-2 outline-none focus:border-red-500"
+                          />
                         </td>
 
                         <td className="px-6 py-5 capitalize text-stone-400">
@@ -756,6 +771,17 @@ export default async function ShowDetailPage({
                         <td className="px-6 py-5 font-bold">
                           {formatCurrency(ticketRevenue)}
                         </td>
+                        <td className="px-6 py-5">
+                          <button
+                            type="submit"
+                            formAction={deleteTicketType}
+                            name="ticket_id"
+                            value={ticket.id}
+                            className="rounded-lg border border-red-900 px-3 py-2 text-sm font-bold text-red-400 hover:bg-red-950/50"
+                          >
+                            Delete
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -764,7 +790,7 @@ export default async function ShowDetailPage({
                 <tfoot className="border-t border-stone-700 bg-stone-950/60">
                   <tr>
                     <td
-                      colSpan={3}
+                      colSpan={4}
                       className="px-6 py-5 font-black uppercase"
                     >
                       Actual Totals
@@ -782,6 +808,52 @@ export default async function ShowDetailPage({
                 </tfoot>
               </table>
             </div>
+
+            <div className="border-t border-stone-800 p-6">
+              <form
+               action={addTicketType}
+                className="grid gap-4 md:grid-cols-4"
+              >
+             <input
+                type="hidden"
+                name="show_id"
+                value={id}
+             />
+
+              <ExpenseField
+               label="Ticket Type"
+                name="ticket_type"
+                placeholder="VIP"
+                required
+              />
+
+              <ExpenseField
+               label="Price"
+                name="ticket_price"
+                type="number"
+                defaultValue="15"
+                min="0"
+               step="0.01"
+              />
+
+              <ExpenseField
+               label="Projected"
+                name="projected_quantity"
+                type="number"
+               defaultValue="0"
+               min="0"
+                step="1"
+              />
+
+              <div className="flex items-end">
+               <button
+                 className="w-full rounded-lg bg-red-600 px-6 py-3 font-black uppercase text-white hover:bg-red-500"
+                >
+                 Add Ticket Type
+                </button>
+              </div>
+            </form>
+          </div>
 
             <div className="flex justify-end border-t border-stone-800 px-6 py-5">
               <button

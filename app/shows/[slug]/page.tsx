@@ -43,24 +43,16 @@ export default async function PublicShowPage({
     notFound();
   }
 
-  const [{ data: tickets, error: ticketError }, { data: merch, error: merchError }] =
-    await Promise.all([
-      supabase
-        .from("ticket_sales")
-        .select("id,ticket_type,ticket_price,channel")
-        .eq("show_id", show.id)
-        .order("created_at"),
-      supabase
-        .from("merch_products")
-        .select("id,name,description,price")
-        .eq("active", true)
-        .order("name"),
-    ]);
+  const { data: tickets, error: ticketError } = await supabase
+   .from("ticket_sales")
+    .select("id,ticket_type,ticket_price,channel")
+    .eq("show_id", show.id)
+    .order("created_at");
 
-  if (ticketError || merchError) {
-    throw new Error(ticketError?.message ?? merchError?.message ?? "Could not load show sales options.");
+  if (ticketError) {
+    throw new Error(ticketError.message);
   }
-
+    
   const venue = Array.isArray(show.venues) ? show.venues[0] : show.venues;
 
   return (
@@ -111,23 +103,6 @@ export default async function PublicShowPage({
           </section>
 
           <section>
-            <h2 className="text-xl font-black uppercase">Merchandise</h2>
-            <div className="mt-4 space-y-3">
-              {(merch ?? []).map((item) => (
-                <OrderRow
-                  key={item.id}
-                  name={`merch_${item.id}`}
-                  optionName={`merch_size_${item.id}`}
-                  label={item.name}
-                  price={Number(item.price)}
-                  description={item.description}
-                  showSize={item.name.toLowerCase().includes("shirt")}
-                />
-              ))}
-            </div>
-          </section>
-
-          <section>
             <h2 className="text-xl font-black uppercase">Your Information</h2>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <Field label="Name" name="customer_name" required />
@@ -151,46 +126,31 @@ export default async function PublicShowPage({
 
 function OrderRow({
   name,
-  optionName,
   label,
   price,
-  description,
-  showSize = false,
 }: {
   name: string;
-  optionName?: string;
   label: string;
   price: number;
-  description?: string | null;
-  showSize?: boolean;
 }) {
   return (
     <div className="rounded-xl border border-stone-800 bg-stone-950 p-4">
       <div className="flex items-center justify-between gap-4">
-        <span>
-          <span className="block font-bold">{label}</span>
-          {description ? <span className="mt-1 block text-xs text-stone-500">{description}</span> : null}
-        </span>
+        <span className="font-bold">{label}</span>
+
         <span className="flex items-center gap-4">
           <strong>{formatCurrency(price)}</strong>
-          <input name={name} type="number" min="0" step="1" defaultValue="0" className="w-20 rounded-lg border border-stone-700 bg-stone-900 px-3 py-2" />
+
+          <input
+            name={name}
+            type="number"
+            min="0"
+            step="1"
+            defaultValue="0"
+            className="w-20 rounded-lg border border-stone-700 bg-stone-900 px-3 py-2"
+          />
         </span>
       </div>
-
-      {showSize && optionName ? (
-        <div className="mt-4">
-          <label htmlFor={optionName} className="mb-2 block text-sm font-semibold">T-shirt Size</label>
-          <select id={optionName} name={optionName} defaultValue="" className="w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3">
-            <option value="">Select size</option>
-            <option value="S">Small</option>
-            <option value="M">Medium</option>
-            <option value="L">Large</option>
-            <option value="XL">XL</option>
-            <option value="2XL">2XL</option>
-            <option value="3XL">3XL</option>
-          </select>
-        </div>
-      ) : null}
     </div>
   );
 }
