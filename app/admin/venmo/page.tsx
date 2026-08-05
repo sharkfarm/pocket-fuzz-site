@@ -105,6 +105,13 @@ export default async function VenmoAdminPage({
           </Link>
         </div>
 
+        <div className="mt-6 rounded-lg border border-stone-800 bg-stone-900 p-4 text-sm text-stone-400">
+          Pending means the checkout was created but payment has not yet been
+          verified. Match the order against Venmo by order number, amount,
+          customer name, and time, then click <strong className="text-stone-200">Mark Paid</strong>.
+          Older submitted orders can be verified the same way.
+        </div>
+
         {query.saved ? (
           <div className="mt-6 rounded-lg border border-emerald-900 bg-emerald-950/40 p-4 text-emerald-200">
             {getSavedMessage(query.saved)}
@@ -198,7 +205,7 @@ export default async function VenmoAdminPage({
                   ))}
                 </div>
 
-                {order.status === "submitted" ? (
+                {order.status === "submitted" || order.status === "pending" ? (
                   <div className="mt-6 flex flex-wrap gap-3">
                     <form action={approveVenmoOrder}>
                       <input
@@ -241,7 +248,7 @@ export default async function VenmoAdminPage({
                   </div>
                 ) : null}
 
-                {order.status === "pending" ? (
+                {false ? (
                   <div className="mt-6">
                     <form action={deleteVenmoOrder}>
                       <input

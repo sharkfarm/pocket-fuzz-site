@@ -5,8 +5,6 @@ import {
   addExpense,
   addMerchSale,
   addShowPayment,
-  addTicketType,
-  deleteTicketType,
   deleteExpense,
   deleteMerchSale,
   deleteShowPayment,
@@ -20,6 +18,7 @@ import {
   updateShowSettlement,
   updateShowPayment,
   updateTicketSales,
+  toggleShowPublished,
 } from "./actions";
 import DeleteShowButton from "./delete-show-button";
 
@@ -126,6 +125,11 @@ export default async function ShowDetailPage({
           deal_tier_1_percent,
           deal_tier_2_threshold,
           deal_tier_2_percent,
+          ticket_sales_status,
+          public_slug,
+          is_public,
+          public_description,
+          flyer_url,
           notes,
           venues (
             name
@@ -332,10 +336,43 @@ export default async function ShowDetailPage({
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <span className="w-fit rounded-full border border-stone-700 px-4 py-2 text-xs font-black uppercase tracking-wide">
               {show.status}
             </span>
+
+            <form action={toggleShowPublished}>
+              <input type="hidden" name="show_id" value={id} />
+              <input
+                type="hidden"
+                name="publish"
+                value={showDetails.is_public ? "false" : "true"}
+              />
+
+              <button
+                type="submit"
+                className={
+                  showDetails.is_public
+                    ? "rounded-lg border border-amber-800 px-4 py-2 text-xs font-black uppercase text-amber-300 hover:bg-amber-950/40"
+                    : "rounded-lg bg-red-600 px-4 py-2 text-xs font-black uppercase text-white hover:bg-red-500"
+                }
+              >
+                {showDetails.is_public
+                  ? "Remove from Website"
+                  : "Publish Show to Website"}
+              </button>
+            </form>
+
+            {showDetails.is_public && showDetails.public_slug ? (
+              <Link
+                href={`/shows/${showDetails.public_slug}`}
+                target="_blank"
+                className="rounded-lg border border-emerald-800 px-4 py-2 text-xs font-black uppercase text-emerald-300 hover:bg-emerald-950/40"
+              >
+                View Live Show
+              </Link>
+            ) : null}
+
             <form action={duplicateShow}>
               <input type="hidden" name="show_id" value={id} />
               <button
@@ -352,12 +389,8 @@ export default async function ShowDetailPage({
           <SuccessMessage>Ticket sales updated.</SuccessMessage>
         ) : null}
 
-        {query.saved === "ticket-added" ? (
-          <SuccessMessage>Ticket type added.</SuccessMessage>
-        ) : null}
-
-        {query.saved === "ticket-deleted" ? (
-          <SuccessMessage>Ticket type deleted.</SuccessMessage>
+        {query.saved === "ticket-status" ? (
+          <SuccessMessage>Ticket availability updated.</SuccessMessage>
         ) : null}
 
         {query.saved === "expense" ? (
@@ -382,6 +415,14 @@ export default async function ShowDetailPage({
 
         {query.saved === "show-details" ? (
           <SuccessMessage>Show details updated.</SuccessMessage>
+        ) : null}
+
+        {query.saved === "show-published" ? (
+          <SuccessMessage>Show published to the website.</SuccessMessage>
+        ) : null}
+
+        {query.saved === "show-unpublished" ? (
+          <SuccessMessage>Show removed from the public website.</SuccessMessage>
         ) : null}
         {query.saved === "expense-updated" ? (
           <SuccessMessage>Expense updated.</SuccessMessage>
@@ -476,6 +517,38 @@ export default async function ShowDetailPage({
               Update the event schedule, venue, attendance goals, and
               contract terms.
             </p>
+          </div>
+
+          <div className="mt-6 rounded-xl border border-stone-800 bg-stone-950 p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-stone-500">
+                  Website Status
+                </p>
+
+                <p className="mt-2 font-bold">
+                  {showDetails.is_public
+                    ? "Published"
+                    : "Not published"}
+                </p>
+
+                <p className="mt-1 text-sm text-stone-500">
+                  {showDetails.public_slug
+                    ? `/shows/${showDetails.public_slug}`
+                    : "A public URL will be generated when the show is published."}
+                </p>
+              </div>
+
+              {showDetails.is_public && showDetails.public_slug ? (
+                <Link
+                  href={`/shows/${showDetails.public_slug}`}
+                  target="_blank"
+                  className="w-fit rounded-lg border border-stone-700 px-4 py-2 text-sm font-bold hover:border-stone-500"
+                >
+                  Open Public Page
+                </Link>
+              ) : null}
+            </div>
           </div>
 
           <form
@@ -681,6 +754,30 @@ export default async function ShowDetailPage({
               <ExpenseField label="Tier 1 Deal %" name="deal_tier_1_percent" type="number" min="0" step="0.01" defaultValue={String(dealTier1Percent)} />
               <ExpenseField label="Tier 2 Tickets" name="deal_tier_2_threshold" type="number" min="0" step="1" defaultValue={String(dealTier2Threshold)} />
               <ExpenseField label="Tier 2 Deal %" name="deal_tier_2_percent" type="number" min="0" step="0.01" defaultValue={String(dealTier2Percent)} />
+
+              <div>
+                <label
+                  htmlFor="ticket_sales_status"
+                  className="mb-2 block text-sm font-semibold"
+                >
+                  Public Ticket Status
+                </label>
+
+                <select
+                  id="ticket_sales_status"
+                  name="ticket_sales_status"
+                  defaultValue={showDetails.ticket_sales_status ?? "on_sale"}
+                  className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 outline-none focus:border-red-500"
+                >
+                  <option value="on_sale">Tickets On Sale</option>
+                  <option value="coming_soon">Coming Soon</option>
+                </select>
+
+                <p className="mt-2 text-xs leading-5 text-stone-500">
+                  “Coming Soon” keeps the show public but hides ticket checkout.
+                </p>
+              </div>
+
               <div className="rounded-lg border border-stone-700 bg-stone-950 p-4 text-sm text-stone-300">
                 <p className="font-black uppercase">Current Calculation</p>
                 <p className="mt-2">Gross less {formatCurrency(facilityFeePerTicket)} × {actualTickets} tickets and {formatCurrency(packageExpenses)} package expenses.</p>
@@ -698,7 +795,6 @@ export default async function ShowDetailPage({
                     <th className="px-6 py-4">Projected</th>
                     <th className="px-6 py-4">Actual Sold</th>
                     <th className="px-6 py-4">Revenue</th>
-                    <th className="px-6 py-4">Actions</th>
                   </tr>
                 </thead>
 
@@ -719,11 +815,7 @@ export default async function ShowDetailPage({
                             name="ticket_id"
                             value={ticket.id}
                           />
-                          <input
-                           name={`ticket_type_${ticket.id}`}
-                            defaultValue={ticket.ticket_type}
-                           className="w-full rounded-lg border border-stone-700 bg-stone-950 px-3 py-2 outline-none focus:border-red-500"
-                          />
+                          {ticket.ticket_type}
                         </td>
 
                         <td className="px-6 py-5 capitalize text-stone-400">
@@ -771,17 +863,6 @@ export default async function ShowDetailPage({
                         <td className="px-6 py-5 font-bold">
                           {formatCurrency(ticketRevenue)}
                         </td>
-                        <td className="px-6 py-5">
-                          <button
-                            type="submit"
-                            formAction={deleteTicketType}
-                            name="ticket_id"
-                            value={ticket.id}
-                            className="rounded-lg border border-red-900 px-3 py-2 text-sm font-bold text-red-400 hover:bg-red-950/50"
-                          >
-                            Delete
-                          </button>
-                        </td>
                       </tr>
                     );
                   })}
@@ -790,7 +871,7 @@ export default async function ShowDetailPage({
                 <tfoot className="border-t border-stone-700 bg-stone-950/60">
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={3}
                       className="px-6 py-5 font-black uppercase"
                     >
                       Actual Totals
@@ -808,52 +889,6 @@ export default async function ShowDetailPage({
                 </tfoot>
               </table>
             </div>
-
-            <div className="border-t border-stone-800 p-6">
-              <form
-               action={addTicketType}
-                className="grid gap-4 md:grid-cols-4"
-              >
-             <input
-                type="hidden"
-                name="show_id"
-                value={id}
-             />
-
-              <ExpenseField
-               label="Ticket Type"
-                name="ticket_type"
-                placeholder="VIP"
-                required
-              />
-
-              <ExpenseField
-               label="Price"
-                name="ticket_price"
-                type="number"
-                defaultValue="15"
-                min="0"
-               step="0.01"
-              />
-
-              <ExpenseField
-               label="Projected"
-                name="projected_quantity"
-                type="number"
-               defaultValue="0"
-               min="0"
-                step="1"
-              />
-
-              <div className="flex items-end">
-               <button
-                 className="w-full rounded-lg bg-red-600 px-6 py-3 font-black uppercase text-white hover:bg-red-500"
-                >
-                 Add Ticket Type
-                </button>
-              </div>
-            </form>
-          </div>
 
             <div className="flex justify-end border-t border-stone-800 px-6 py-5">
               <button
