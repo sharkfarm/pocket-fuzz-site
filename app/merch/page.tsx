@@ -20,7 +20,7 @@ export default async function MerchPage({
 
   const { data, error } = await supabase
     .from("merch_products")
-    .select("id,name,description,price")
+    .select("id,name,description,price,image_url")
     .eq("active", true)
     .order("name", { ascending: true });
 
