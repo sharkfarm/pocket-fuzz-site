@@ -139,6 +139,9 @@ export default function HomeClient({
             <a href="#shows" className="text-stone-400 hover:text-white">
               Shows
             </a>
+            <a href="/merch" className="text-stone-400 hover:text-white">
+              Merch
+            </a>
             <a href="#music" className="text-stone-400 hover:text-white">
               Music
             </a>
@@ -185,6 +188,12 @@ export default function HomeClient({
                 className="rounded-none border border-stone-700 px-6 py-3 text-sm font-black uppercase tracking-[0.2em] text-stone-200 transition hover:border-stone-400"
               >
                 Shows
+              </a>
+              <a
+                href="/merch"
+                className="rounded-none border border-stone-700 px-6 py-3 text-sm font-black uppercase tracking-[0.2em] text-stone-200 transition hover:border-stone-400"
+              >
+                Merch
               </a>
             </div>
           </div>
