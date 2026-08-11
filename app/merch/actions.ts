@@ -9,6 +9,21 @@ import {
 
 const SHIRT_SIZES = ["S", "M", "L", "XL", "2XL"] as const;
 
+const VENMO_FEE_RATE = 0.019;
+const VENMO_FIXED_FEE = 0.10;
+
+function calculateVenmoServiceFee(subtotal: number) {
+  if (subtotal <= 0) return 0;
+
+  const totalWithFee =
+    (subtotal + VENMO_FIXED_FEE) / (1 - VENMO_FEE_RATE);
+
+  return Math.max(
+    0,
+    Math.round((totalWithFee - subtotal) * 100) / 100
+  );
+}
+
 function positiveInt(value: FormDataEntryValue | null) {
   const parsed = Number(value ?? 0);
 
@@ -116,10 +131,13 @@ export async function createMerchOrder(formData: FormData) {
     );
   }
 
-  const expectedAmount = items.reduce(
+  const subtotal = items.reduce(
     (sum, item) => sum + item.unit_price * item.quantity,
     0
   );
+
+  const venmoServiceFee = calculateVenmoServiceFee(subtotal);
+  const expectedAmount = subtotal + venmoServiceFee;
 
   const temporaryNumber = `TEMP-${crypto.randomUUID()}`;
 

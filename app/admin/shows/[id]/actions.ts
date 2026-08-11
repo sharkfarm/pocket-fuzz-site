@@ -23,9 +23,6 @@ export async function updateTicketSales(formData: FormData) {
   const dealTier1Percent = Number(formData.get("deal_tier_1_percent") ?? 60);
   const dealTier2Threshold = Number(formData.get("deal_tier_2_threshold") ?? 100);
   const dealTier2Percent = Number(formData.get("deal_tier_2_percent") ?? 70);
-  const ticketSalesStatus = String(
-    formData.get("ticket_sales_status") ?? "on_sale"
-  );
 
   if (!showId) {
     throw new Error("Show ID is missing.");
@@ -40,14 +37,6 @@ export async function updateTicketSales(formData: FormData) {
     dealTier2Threshold,
     dealTier2Percent,
   ];
-
-  if (!["on_sale", "coming_soon"].includes(ticketSalesStatus)) {
-    redirect(
-      `/admin/shows/${showId}?error=${encodeURIComponent(
-        "Invalid public ticket status."
-      )}`
-    );
-  }
 
   if (
     dealValues.some((value) => !Number.isFinite(value) || value < 0) ||
@@ -73,7 +62,6 @@ export async function updateTicketSales(formData: FormData) {
       deal_tier_1_percent: dealTier1Percent,
       deal_tier_2_threshold: dealTier2Threshold,
       deal_tier_2_percent: dealTier2Percent,
-      ticket_sales_status: ticketSalesStatus,
     })
     .eq("id", showId);
 
@@ -84,6 +72,19 @@ export async function updateTicketSales(formData: FormData) {
   const ticketIds = formData.getAll("ticket_id").map(String);
 
   for (const ticketId of ticketIds) {
+    const ticketType = String(
+      formData.get(`ticket_type_${ticketId}`) ?? ""
+    ).trim();
+
+    const channel = String(
+      formData.get(`ticket_channel_${ticketId}`) ?? ""
+    ).trim();
+
+    const allowedChannels = ["online", "offline", "door", "reserved"];
+
+    const venmoServiceFee =
+      formData.get(`venmo_service_fee_${ticketId}`) === "on";
+
     const price = Number(
       formData.get(`ticket_price_${ticketId}`) ?? 0
     );
@@ -97,6 +98,8 @@ export async function updateTicketSales(formData: FormData) {
     );
 
     if (
+      !ticketType ||
+      !allowedChannels.includes(channel) ||
       !Number.isFinite(price) ||
       !Number.isInteger(projectedQuantity) ||
       !Number.isInteger(actualQuantity) ||
@@ -106,7 +109,7 @@ export async function updateTicketSales(formData: FormData) {
     ) {
       redirect(
         `/admin/shows/${showId}?error=${encodeURIComponent(
-          "Ticket prices and quantities must be valid nonnegative numbers."
+          "Ticket type, channel, prices, and quantities must be valid."
         )}`
       );
     }
@@ -114,9 +117,12 @@ export async function updateTicketSales(formData: FormData) {
     const { error } = await supabase
       .from("ticket_sales")
       .update({
+        ticket_type: ticketType,
+        channel,
         ticket_price: price,
         projected_quantity: projectedQuantity,
         actual_quantity: actualQuantity,
+        venmo_service_fee: venmoServiceFee,
       })
       .eq("id", ticketId)
       .eq("show_id", showId);
@@ -135,6 +141,148 @@ export async function updateTicketSales(formData: FormData) {
 
   redirect(`/admin/shows/${showId}?saved=tickets`);
 }
+
+export async function addTicketType(formData: FormData) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/admin/login");
+  }
+
+  const showId = String(formData.get("show_id") ?? "");
+  const ticketType = String(formData.get("ticket_type") ?? "").trim();
+  const channel = String(formData.get("channel") ?? "").trim();
+  const allowedChannels = ["online", "offline", "door", "reserved"];
+  const ticketPrice = Number(formData.get("ticket_price") ?? 0);
+  const projectedQuantity = Number(formData.get("projected_quantity") ?? 0);
+  const venmoServiceFee = formData.get("venmo_service_fee") === "on";
+
+  if (
+    !showId ||
+    !ticketType ||
+    !allowedChannels.includes(channel) ||
+    !Number.isFinite(ticketPrice) ||
+    ticketPrice < 0 ||
+    !Number.isInteger(projectedQuantity) ||
+    projectedQuantity < 0
+  ) {
+    redirect(
+      `/admin/shows/${showId}?error=${encodeURIComponent(
+        "Enter a ticket type, choose a valid channel, and enter a valid price and projected quantity."
+      )}`
+    );
+  }
+
+  const { error } = await supabase.from("ticket_sales").insert({
+    show_id: showId,
+    ticket_type: ticketType,
+    channel,
+    ticket_price: ticketPrice,
+    projected_quantity: projectedQuantity,
+    actual_quantity: 0,
+    venmo_service_fee: venmoServiceFee,
+  });
+
+  if (error) {
+    redirect(
+      `/admin/shows/${showId}?error=${encodeURIComponent(error.message)}`
+    );
+  }
+
+  revalidatePath("/admin/shows");
+  revalidatePath(`/admin/shows/${showId}`);
+  revalidatePath("/shows");
+
+  redirect(`/admin/shows/${showId}?saved=ticket-type-added`);
+}
+
+export async function deleteTicketType(formData: FormData) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/admin/login");
+  }
+
+  const showId = String(formData.get("show_id") ?? "");
+  const ticketId = String(formData.get("ticket_id") ?? "");
+
+  if (!showId || !ticketId) {
+    throw new Error("Show ID or ticket ID is missing.");
+  }
+
+  const { data: ticket, error: ticketError } = await supabase
+    .from("ticket_sales")
+    .select("actual_quantity")
+    .eq("id", ticketId)
+    .eq("show_id", showId)
+    .maybeSingle();
+
+  if (ticketError) {
+    redirect(
+      `/admin/shows/${showId}?error=${encodeURIComponent(ticketError.message)}`
+    );
+  }
+
+  if (!ticket) {
+    redirect(
+      `/admin/shows/${showId}?error=${encodeURIComponent("Ticket type not found.")}`
+    );
+  }
+
+  if (Number(ticket.actual_quantity ?? 0) > 0) {
+    redirect(
+      `/admin/shows/${showId}?error=${encodeURIComponent(
+        "This ticket type has recorded sales. Set Actual Sold to 0 before deleting it, or keep it for transaction history."
+      )}`
+    );
+  }
+
+  const { count, error: orderError } = await supabase
+    .from("venmo_order_items")
+    .select("id", { count: "exact", head: true })
+    .eq("ticket_sale_id", ticketId);
+
+  if (orderError) {
+    redirect(
+      `/admin/shows/${showId}?error=${encodeURIComponent(orderError.message)}`
+    );
+  }
+
+  if ((count ?? 0) > 0) {
+    redirect(
+      `/admin/shows/${showId}?error=${encodeURIComponent(
+        "This ticket type is linked to a Venmo order and cannot be deleted without losing order history. Rename it instead."
+      )}`
+    );
+  }
+
+  const { error } = await supabase
+    .from("ticket_sales")
+    .delete()
+    .eq("id", ticketId)
+    .eq("show_id", showId);
+
+  if (error) {
+    redirect(
+      `/admin/shows/${showId}?error=${encodeURIComponent(error.message)}`
+    );
+  }
+
+  revalidatePath("/admin/shows");
+  revalidatePath(`/admin/shows/${showId}`);
+  revalidatePath("/shows");
+
+  redirect(`/admin/shows/${showId}?saved=ticket-type-deleted`);
+}
+
 export async function addExpense(formData: FormData) {
   const supabase = await createClient();
 
@@ -570,120 +718,6 @@ export async function updateShowDetails(formData: FormData) {
   redirect(`/admin/shows/${showId}?saved=show-details`);
 }
 
-
-export async function toggleShowPublished(formData: FormData) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/admin/login");
-  }
-
-  const showId = String(formData.get("show_id") ?? "");
-  const publish = String(formData.get("publish") ?? "") === "true";
-
-  if (!showId) {
-    throw new Error("Show ID is missing.");
-  }
-
-  const { data: show, error: showError } = await supabase
-    .from("shows")
-    .select(`
-      id,
-      show_name,
-      show_date,
-      public_slug,
-      venues (
-        name
-      )
-    `)
-    .eq("id", showId)
-    .maybeSingle();
-
-  if (showError || !show) {
-    redirect(
-      `/admin/shows/${showId}?error=${encodeURIComponent(
-        showError?.message ?? "Show not found."
-      )}`
-    );
-  }
-
-  let publicSlug = String(show.public_slug ?? "").trim();
-
-  if (publish && !publicSlug) {
-    const venue = Array.isArray(show.venues)
-      ? show.venues[0]
-      : show.venues;
-
-    const slugBase = [
-      venue?.name || show.show_name || "pocket-fuzz-show",
-      show.show_date,
-    ]
-      .filter(Boolean)
-      .join("-");
-
-    publicSlug = slugifyPublicValue(slugBase);
-
-    const { data: existingSlug, error: slugLookupError } = await supabase
-      .from("shows")
-      .select("id")
-      .eq("public_slug", publicSlug)
-      .neq("id", showId)
-      .maybeSingle();
-
-    if (slugLookupError) {
-      redirect(
-        `/admin/shows/${showId}?error=${encodeURIComponent(
-          slugLookupError.message
-        )}`
-      );
-    }
-
-    if (existingSlug) {
-      publicSlug = `${publicSlug}-${showId.slice(0, 8)}`;
-    }
-  }
-
-  const { error } = await supabase
-    .from("shows")
-    .update({
-      is_public: publish,
-      public_slug: publicSlug || null,
-    })
-    .eq("id", showId);
-
-  if (error) {
-    redirect(
-      `/admin/shows/${showId}?error=${encodeURIComponent(error.message)}`
-    );
-  }
-
-  revalidatePath("/");
-  revalidatePath("/shows");
-  revalidatePath(`/admin/shows/${showId}`);
-
-  if (publicSlug) {
-    revalidatePath(`/shows/${publicSlug}`);
-  }
-
-  redirect(
-    `/admin/shows/${showId}?saved=${
-      publish ? "show-published" : "show-unpublished"
-    }`
-  );
-}
-
-function slugifyPublicValue(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
 export async function updateExpense(formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -1008,4 +1042,74 @@ export async function deleteShow(formData: FormData) {
   revalidatePath("/shows");
 
   redirect("/admin/shows?deleted=true");
+}
+
+
+export async function addBandMember(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/admin/login");
+
+  const name = String(formData.get("name") ?? "").trim();
+  const role = String(formData.get("role") ?? "").trim();
+  const sortOrder = Number(formData.get("sort_order") ?? 0);
+
+  if (!name) redirect(`/admin/band-members?error=${encodeURIComponent("Band member name is required.")}`);
+
+  const { error } = await supabase.from("band_members").insert({
+    name,
+    role: role || null,
+    active: true,
+    sort_order: Number.isInteger(sortOrder) && sortOrder >= 0 ? sortOrder : 0,
+  });
+
+  if (error) redirect(`/admin/band-members?error=${encodeURIComponent(error.message)}`);
+
+  revalidatePath("/admin/band-members");
+  redirect("/admin/band-members?saved=added");
+}
+
+export async function updateBandMember(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/admin/login");
+
+  const memberId = String(formData.get("member_id") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const role = String(formData.get("role") ?? "").trim();
+  const sortOrder = Number(formData.get("sort_order") ?? 0);
+  const active = formData.get("active") === "on";
+
+  if (!memberId || !name) redirect(`/admin/band-members?error=${encodeURIComponent("Band member and name are required.")}`);
+
+  const { error } = await supabase
+    .from("band_members")
+    .update({
+      name,
+      role: role || null,
+      active,
+      sort_order: Number.isInteger(sortOrder) && sortOrder >= 0 ? sortOrder : 0,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", memberId);
+
+  if (error) redirect(`/admin/band-members?error=${encodeURIComponent(error.message)}`);
+
+  revalidatePath("/admin/band-members");
+  redirect("/admin/band-members?saved=updated");
+}
+
+export async function deleteBandMember(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/admin/login");
+
+  const memberId = String(formData.get("member_id") ?? "");
+  if (!memberId) redirect(`/admin/band-members?error=${encodeURIComponent("Band member ID is missing.")}`);
+
+  const { error } = await supabase.from("band_members").delete().eq("id", memberId);
+  if (error) redirect(`/admin/band-members?error=${encodeURIComponent(error.message)}`);
+
+  revalidatePath("/admin/band-members");
+  redirect("/admin/band-members?saved=deleted");
 }

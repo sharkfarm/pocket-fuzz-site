@@ -55,13 +55,24 @@ export default async function PublicShowsPage() {
   return (
     <main className="min-h-screen bg-stone-950 px-6 py-16 text-stone-100">
       <div className="mx-auto max-w-6xl">
-        <p className="text-xs font-bold uppercase tracking-[0.3em] text-red-500">
-          Pocket Fuzz
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-red-500">
+              Pocket Fuzz
+            </p>
 
-        <h1 className="mt-3 text-5xl font-black uppercase">
-          Shows
-        </h1>
+            <h1 className="mt-3 text-5xl font-black uppercase">
+              Shows
+            </h1>
+          </div>
+
+          <Link
+            href="/"
+            className="text-sm font-bold text-stone-400 hover:text-white"
+          >
+            Pocket Fuzz Home
+          </Link>
+        </div>
 
         {error ? (
           <div className="mt-8 rounded-lg border border-red-900 bg-red-950/50 p-4 text-red-200">

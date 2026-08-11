@@ -24,7 +24,12 @@ export default async function ShowsPage({
     redirect("/admin/login");
   }
 
-  const [{ data: shows, error }, { data: expenses }] = await Promise.all([
+  const [
+    { data: shows, error },
+    { data: expenses },
+    { data: showTerms },
+    { data: merchSales },
+  ] = await Promise.all([
     supabase
       .from("show_financial_summary")
       .select("*")
@@ -32,7 +37,25 @@ export default async function ShowsPage({
 
     supabase
       .from("expenses")
-      .select("actual_amount,reimbursed"),
+      .select("show_id,actual_amount,reimbursed"),
+
+    supabase
+      .from("shows")
+      .select(`
+        id,
+        facility_fee_per_ticket,
+        package_expenses,
+        deal_base_percent,
+        deal_tier_1_threshold,
+        deal_tier_1_percent,
+        deal_tier_2_threshold,
+        deal_tier_2_percent,
+        other_income
+      `),
+
+    supabase
+      .from("merch_sales")
+      .select("show_id,quantity_sold,unit_price,unit_cost"),
   ]);
 
   const outstandingReimbursements = (expenses ?? [])
@@ -41,6 +64,116 @@ export default async function ShowsPage({
       (sum, expense) => sum + Number(expense.actual_amount),
       0
     );
+
+  const termsByShow = new Map(
+    (showTerms ?? []).map((item) => [item.id, item])
+  );
+
+  const expensesByShow = new Map<string, number>();
+
+  for (const expense of expenses ?? []) {
+    expensesByShow.set(
+      expense.show_id,
+      (expensesByShow.get(expense.show_id) ?? 0) +
+        Number(expense.actual_amount ?? 0)
+    );
+  }
+
+  const merchProfitByShow = new Map<string, number>();
+
+  for (const item of merchSales ?? []) {
+    const profit =
+      Number(item.quantity_sold ?? 0) *
+      (Number(item.unit_price ?? 0) - Number(item.unit_cost ?? 0));
+
+    merchProfitByShow.set(
+      item.show_id,
+      (merchProfitByShow.get(item.show_id) ?? 0) + profit
+    );
+  }
+
+  const correctedShows = (shows ?? []).map((show) => {
+    const terms = termsByShow.get(show.show_id);
+
+    if (!terms) {
+      return show;
+    }
+
+    const ticketsSold = Number(show.tickets_sold ?? 0);
+    const grossTicketRevenue = Number(show.gross_ticket_sales ?? 0);
+
+    const facilityFeePerTicket = Number(
+      terms.facility_fee_per_ticket ?? 2
+    );
+
+    const packageExpenses = Number(
+      terms.package_expenses ?? 250
+    );
+
+    const basePercent = Number(
+      terms.deal_base_percent ?? 50
+    );
+
+    const tier1Threshold = Number(
+      terms.deal_tier_1_threshold ?? 50
+    );
+
+    const tier1Percent = Number(
+      terms.deal_tier_1_percent ?? 60
+    );
+
+    const tier2Threshold = Number(
+      terms.deal_tier_2_threshold ?? 100
+    );
+
+    const tier2Percent = Number(
+      terms.deal_tier_2_percent ?? 70
+    );
+
+    const payoutRate =
+      ticketsSold >= tier2Threshold
+        ? tier2Percent / 100
+        : ticketsSold >= tier1Threshold
+          ? tier1Percent / 100
+          : basePercent / 100;
+
+    const payoutBasis = Math.max(
+      0,
+      grossTicketRevenue -
+        ticketsSold * facilityFeePerTicket -
+        packageExpenses
+    );
+
+    const ticketPayout = payoutBasis * payoutRate;
+
+    const totalExpenses =
+      expensesByShow.get(show.show_id) ?? 0;
+
+    const otherIncome = Number(
+      terms.other_income ?? 0
+    );
+
+    const merchProfit =
+      merchProfitByShow.get(show.show_id) ?? 0;
+
+    const ticketNet =
+      ticketPayout +
+      otherIncome -
+      totalExpenses;
+
+    const netShowProfit =
+      ticketNet +
+      merchProfit;
+
+    return {
+      ...show,
+      payout_rate: payoutRate,
+      ticket_payout: ticketPayout,
+      total_expenses: totalExpenses,
+      merch_profit: merchProfit,
+      net_show_profit: netShowProfit,
+    };
+  });
 
   return (
     <main className="min-h-screen bg-stone-950 px-4 py-8 text-stone-100 sm:px-6 sm:py-10">
@@ -103,7 +236,7 @@ export default async function ShowsPage({
         ) : null}
 
         <ShowDashboardClient
-          shows={(shows ?? []) as never[]}
+          shows={correctedShows as never[]}
           outstandingReimbursements={outstandingReimbursements}
         />
       </div>

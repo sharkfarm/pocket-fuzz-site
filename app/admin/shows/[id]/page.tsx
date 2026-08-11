@@ -5,9 +5,11 @@ import {
   addExpense,
   addMerchSale,
   addShowPayment,
+  addTicketType,
   deleteExpense,
   deleteMerchSale,
   deleteShowPayment,
+  deleteTicketType,
   duplicateShow,
   deleteShow,
   toggleExpenseReimbursed,
@@ -18,7 +20,6 @@ import {
   updateShowSettlement,
   updateShowPayment,
   updateTicketSales,
-  toggleShowPublished,
 } from "./actions";
 import DeleteShowButton from "./delete-show-button";
 
@@ -39,6 +40,7 @@ type TicketSale = {
   ticket_price: number | string;
   projected_quantity: number;
   actual_quantity: number;
+  venmo_service_fee: boolean;
 };
 
 type Expense = {
@@ -70,6 +72,13 @@ type ShowPayment = {
   paid: boolean;
 };
 
+type BandMember = {
+  id: string;
+  name: string;
+  role: string | null;
+  active: boolean;
+};
+
 export default async function ShowDetailPage({
   params,
   searchParams,
@@ -94,6 +103,7 @@ export default async function ShowDetailPage({
     { data: expenseData, error: expenseError },
     { data: merchData, error: merchError },
     { data: paymentData, error: paymentError },
+    { data: bandMemberData, error: bandMemberError },
   ] = await Promise.all([
     supabase
       .from("show_financial_summary")
@@ -125,11 +135,6 @@ export default async function ShowDetailPage({
           deal_tier_1_percent,
           deal_tier_2_threshold,
           deal_tier_2_percent,
-          ticket_sales_status,
-          public_slug,
-          is_public,
-          public_description,
-          flyer_url,
           notes,
           venues (
             name
@@ -148,7 +153,8 @@ export default async function ShowDetailPage({
           channel,
           ticket_price,
           projected_quantity,
-          actual_quantity
+          actual_quantity,
+          venmo_service_fee
         `
       )
       .eq("show_id", id)
@@ -193,6 +199,13 @@ export default async function ShowDetailPage({
       .select("id, member_name, amount, paid")
       .eq("show_id", id)
       .order("created_at", { ascending: true }),
+
+    supabase
+      .from("band_members")
+      .select("id, name, role, active")
+      .eq("active", true)
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true }),
   ]);
 
   if (showError || !show) {
@@ -213,6 +226,7 @@ export default async function ShowDetailPage({
   const expenses = (expenseData ?? []) as Expense[];
   const merchSales = (merchData ?? []) as MerchSale[];
   const showPayments = (paymentData ?? []) as ShowPayment[];
+  const bandMembers = (bandMemberData ?? []) as BandMember[];
 
   const totalBudgetedExpenses = expenses.reduce(
     (total, expense) => total + Number(expense.budget_amount),
@@ -269,7 +283,7 @@ export default async function ShowDetailPage({
   const bandTicketPayout = actualDealNet * actualPayoutRate;
   const otherIncome = Number(show.other_income ?? 0);
   const ticketNet =
-    grossTicketRevenue + otherIncome - bandTicketPayout - totalActualExpenses;
+    bandTicketPayout + otherIncome - totalActualExpenses;
   const calculatedTotalShowProfit = ticketNet + merchProfit;
   const totalAssignedPayments = showPayments.reduce(
     (total, payment) => total + Number(payment.amount),
@@ -336,43 +350,10 @@ export default async function ShowDetailPage({
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-3">
             <span className="w-fit rounded-full border border-stone-700 px-4 py-2 text-xs font-black uppercase tracking-wide">
               {show.status}
             </span>
-
-            <form action={toggleShowPublished}>
-              <input type="hidden" name="show_id" value={id} />
-              <input
-                type="hidden"
-                name="publish"
-                value={showDetails.is_public ? "false" : "true"}
-              />
-
-              <button
-                type="submit"
-                className={
-                  showDetails.is_public
-                    ? "rounded-lg border border-amber-800 px-4 py-2 text-xs font-black uppercase text-amber-300 hover:bg-amber-950/40"
-                    : "rounded-lg bg-red-600 px-4 py-2 text-xs font-black uppercase text-white hover:bg-red-500"
-                }
-              >
-                {showDetails.is_public
-                  ? "Remove from Website"
-                  : "Publish Show to Website"}
-              </button>
-            </form>
-
-            {showDetails.is_public && showDetails.public_slug ? (
-              <Link
-                href={`/shows/${showDetails.public_slug}`}
-                target="_blank"
-                className="rounded-lg border border-emerald-800 px-4 py-2 text-xs font-black uppercase text-emerald-300 hover:bg-emerald-950/40"
-              >
-                View Live Show
-              </Link>
-            ) : null}
-
             <form action={duplicateShow}>
               <input type="hidden" name="show_id" value={id} />
               <button
@@ -389,8 +370,12 @@ export default async function ShowDetailPage({
           <SuccessMessage>Ticket sales updated.</SuccessMessage>
         ) : null}
 
-        {query.saved === "ticket-status" ? (
-          <SuccessMessage>Ticket availability updated.</SuccessMessage>
+        {query.saved === "ticket-type-added" ? (
+          <SuccessMessage>Ticket type added.</SuccessMessage>
+        ) : null}
+
+        {query.saved === "ticket-type-deleted" ? (
+          <SuccessMessage>Ticket type deleted.</SuccessMessage>
         ) : null}
 
         {query.saved === "expense" ? (
@@ -415,14 +400,6 @@ export default async function ShowDetailPage({
 
         {query.saved === "show-details" ? (
           <SuccessMessage>Show details updated.</SuccessMessage>
-        ) : null}
-
-        {query.saved === "show-published" ? (
-          <SuccessMessage>Show published to the website.</SuccessMessage>
-        ) : null}
-
-        {query.saved === "show-unpublished" ? (
-          <SuccessMessage>Show removed from the public website.</SuccessMessage>
         ) : null}
         {query.saved === "expense-updated" ? (
           <SuccessMessage>Expense updated.</SuccessMessage>
@@ -465,6 +442,12 @@ export default async function ShowDetailPage({
         {merchError ? (
           <ErrorMessage>
             Could not load merchandise sales: {merchError.message}
+          </ErrorMessage>
+        ) : null}
+
+        {bandMemberError ? (
+          <ErrorMessage>
+            Could not load band members: {bandMemberError.message}
           </ErrorMessage>
         ) : null}
         {paymentError ? (
@@ -517,38 +500,6 @@ export default async function ShowDetailPage({
               Update the event schedule, venue, attendance goals, and
               contract terms.
             </p>
-          </div>
-
-          <div className="mt-6 rounded-xl border border-stone-800 bg-stone-950 p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-wide text-stone-500">
-                  Website Status
-                </p>
-
-                <p className="mt-2 font-bold">
-                  {showDetails.is_public
-                    ? "Published"
-                    : "Not published"}
-                </p>
-
-                <p className="mt-1 text-sm text-stone-500">
-                  {showDetails.public_slug
-                    ? `/shows/${showDetails.public_slug}`
-                    : "A public URL will be generated when the show is published."}
-                </p>
-              </div>
-
-              {showDetails.is_public && showDetails.public_slug ? (
-                <Link
-                  href={`/shows/${showDetails.public_slug}`}
-                  target="_blank"
-                  className="w-fit rounded-lg border border-stone-700 px-4 py-2 text-sm font-bold hover:border-stone-500"
-                >
-                  Open Public Page
-                </Link>
-              ) : null}
-            </div>
           </div>
 
           <form
@@ -729,9 +680,9 @@ export default async function ShowDetailPage({
             </h2>
 
             <p className="mt-1 text-sm text-stone-400">
-              Admission prices and quantities for {show.venue_name || "this venue"}.
-              Merchandise revenue is tracked separately and does not affect the
-              venue ticket payout.
+              Ticket types are unique to this show. Edit the name, channel,
+              price, projected quantity, and actual sold count below, or add and
+              remove ticket types as needed. Merchandise revenue is tracked separately.
             </p>
           </div>
 
@@ -754,30 +705,6 @@ export default async function ShowDetailPage({
               <ExpenseField label="Tier 1 Deal %" name="deal_tier_1_percent" type="number" min="0" step="0.01" defaultValue={String(dealTier1Percent)} />
               <ExpenseField label="Tier 2 Tickets" name="deal_tier_2_threshold" type="number" min="0" step="1" defaultValue={String(dealTier2Threshold)} />
               <ExpenseField label="Tier 2 Deal %" name="deal_tier_2_percent" type="number" min="0" step="0.01" defaultValue={String(dealTier2Percent)} />
-
-              <div>
-                <label
-                  htmlFor="ticket_sales_status"
-                  className="mb-2 block text-sm font-semibold"
-                >
-                  Public Ticket Status
-                </label>
-
-                <select
-                  id="ticket_sales_status"
-                  name="ticket_sales_status"
-                  defaultValue={showDetails.ticket_sales_status ?? "on_sale"}
-                  className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 outline-none focus:border-red-500"
-                >
-                  <option value="on_sale">Tickets On Sale</option>
-                  <option value="coming_soon">Coming Soon</option>
-                </select>
-
-                <p className="mt-2 text-xs leading-5 text-stone-500">
-                  “Coming Soon” keeps the show public but hides ticket checkout.
-                </p>
-              </div>
-
               <div className="rounded-lg border border-stone-700 bg-stone-950 p-4 text-sm text-stone-300">
                 <p className="font-black uppercase">Current Calculation</p>
                 <p className="mt-2">Gross less {formatCurrency(facilityFeePerTicket)} × {actualTickets} tickets and {formatCurrency(packageExpenses)} package expenses.</p>
@@ -795,6 +722,8 @@ export default async function ShowDetailPage({
                     <th className="px-6 py-4">Projected</th>
                     <th className="px-6 py-4">Actual Sold</th>
                     <th className="px-6 py-4">Revenue</th>
+                    <th className="px-6 py-4">Venmo Fee</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
 
@@ -815,11 +744,27 @@ export default async function ShowDetailPage({
                             name="ticket_id"
                             value={ticket.id}
                           />
-                          {ticket.ticket_type}
+                          <input
+                            name={`ticket_type_${ticket.id}`}
+                            type="text"
+                            defaultValue={ticket.ticket_type}
+                            required
+                            className="w-44 rounded-lg border border-stone-700 bg-stone-950 px-3 py-2 font-bold outline-none focus:border-red-500"
+                          />
                         </td>
 
-                        <td className="px-6 py-5 capitalize text-stone-400">
-                          {ticket.channel}
+                        <td className="px-6 py-5">
+                          <select
+                            name={`ticket_channel_${ticket.id}`}
+                            defaultValue={ticket.channel}
+                            required
+                            className="w-36 rounded-lg border border-stone-700 bg-stone-950 px-3 py-2 outline-none focus:border-red-500"
+                          >
+                            <option value="online">Online</option>
+                            <option value="offline">Offline</option>
+                            <option value="door">Door</option>
+                            <option value="reserved">Reserved</option>
+                          </select>
                         </td>
 
                         <td className="px-6 py-5">
@@ -863,6 +808,28 @@ export default async function ShowDetailPage({
                         <td className="px-6 py-5 font-bold">
                           {formatCurrency(ticketRevenue)}
                         </td>
+
+                        <td className="px-6 py-5">
+                          <label className="inline-flex items-center gap-2 text-sm font-semibold">
+                            <input
+                              type="checkbox"
+                              name={`venmo_service_fee_${ticket.id}`}
+                              defaultChecked={Boolean(ticket.venmo_service_fee)}
+                              className="h-4 w-4"
+                            />
+                            Charge fee
+                          </label>
+                        </td>
+
+                        <td className="px-6 py-5 text-right">
+                          <button
+                            type="submit"
+                            form={`delete-ticket-${ticket.id}`}
+                            className="text-sm font-bold text-red-400 hover:text-red-300"
+                          >
+                            Delete
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -885,6 +852,8 @@ export default async function ShowDetailPage({
                         Number(show.gross_ticket_sales)
                       )}
                     </td>
+                    <td className="px-6 py-5" />
+                    <td className="px-6 py-5" />
                   </tr>
                 </tfoot>
               </table>
@@ -899,6 +868,98 @@ export default async function ShowDetailPage({
               </button>
             </div>
           </form>
+
+          {tickets.map((ticket) => (
+            <form
+              key={`delete-${ticket.id}`}
+              id={`delete-ticket-${ticket.id}`}
+              action={deleteTicketType}
+            >
+              <input type="hidden" name="show_id" value={id} />
+              <input type="hidden" name="ticket_id" value={ticket.id} />
+            </form>
+          ))}
+
+          <div className="border-t border-stone-800 bg-stone-950/30 p-6">
+            <h3 className="font-black uppercase">Add Ticket Type</h3>
+            <p className="mt-1 text-sm text-stone-500">
+              Add only the ticket options that should be offered for this show.
+              Enable Venmo Fee when the customer should cover the Venmo business service fee.
+            </p>
+
+            <form
+              action={addTicketType}
+              className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-6"
+            >
+              <input type="hidden" name="show_id" value={id} />
+
+              <ExpenseField
+                label="Ticket Type"
+                name="ticket_type"
+                placeholder="General Admission"
+                required
+              />
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold">
+                  Channel
+                </span>
+                <select
+                  name="channel"
+                  defaultValue="online"
+                  required
+                  className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 outline-none focus:border-red-500"
+                >
+                  <option value="online">Online</option>
+                  <option value="offline">Offline</option>
+                  <option value="door">Door</option>
+                  <option value="reserved">Reserved</option>
+                </select>
+              </label>
+
+              <ExpenseField
+                label="Price"
+                name="ticket_price"
+                type="number"
+                min="0"
+                step="0.01"
+                defaultValue="0"
+                required
+              />
+
+              <ExpenseField
+                label="Projected"
+                name="projected_quantity"
+                type="number"
+                min="0"
+                step="1"
+                defaultValue="0"
+                required
+              />
+
+              <label className="flex items-end">
+                <span className="flex w-full items-center gap-3 rounded-lg border border-stone-700 bg-stone-950 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    name="venmo_service_fee"
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm font-semibold">
+                    Venmo Fee
+                  </span>
+                </span>
+              </label>
+
+              <div className="flex items-end">
+                <button
+                  type="submit"
+                  className="w-full rounded-lg border border-red-600 px-5 py-3 font-black uppercase text-red-400 hover:bg-red-600 hover:text-white"
+                >
+                  Add Ticket Type
+                </button>
+              </div>
+            </form>
+          </div>
         </section>
 
         <section className="mt-8 overflow-hidden rounded-2xl border border-stone-800 bg-stone-900">
@@ -1434,15 +1495,57 @@ export default async function ShowDetailPage({
             ))}
           </div>
 
-          <form action={addShowPayment} className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-stone-500">
+              Add members once, then select them here for each show payout.
+            </p>
+            <Link
+              href="/admin/band-members"
+              className="rounded-lg border border-stone-700 px-4 py-2 text-sm font-bold hover:border-stone-500"
+            >
+              Manage Band Members
+            </Link>
+          </div>
+
+          <form action={addShowPayment} className="mt-4 grid gap-4 md:grid-cols-3">
             <input type="hidden" name="show_id" value={id} />
-            <ExpenseField label="Band Member" name="member_name" placeholder="Bobby" required />
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold">Band Member</span>
+              <select
+                name="member_name"
+                required
+                defaultValue=""
+                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 outline-none focus:border-red-500"
+              >
+                <option value="" disabled>Select member</option>
+                {bandMembers.map((member) => (
+                  <option key={member.id} value={member.name}>
+                    {member.name}{member.role ? ` — ${member.role}` : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+
             <ExpenseField label="Amount" name="amount" type="number" min="0" step="0.01" defaultValue="0" required />
+
             <label className="flex items-center gap-3 rounded-lg border border-stone-700 bg-stone-950 px-4 py-3">
               <input type="checkbox" name="paid" /> Already paid
             </label>
+
+            {bandMembers.length === 0 ? (
+              <p className="md:col-span-3 text-sm text-amber-300">
+                Add at least one band member before assigning payouts.
+              </p>
+            ) : null}
+
             <div className="md:col-span-3 flex justify-end">
-              <button className="rounded-lg bg-red-600 px-6 py-3 font-black uppercase">Add Payment</button>
+              <button
+                disabled={bandMembers.length === 0}
+                className="rounded-lg bg-red-600 px-6 py-3 font-black uppercase disabled:cursor-not-allowed disabled:bg-stone-700"
+              >
+                Add Payment
+              </button>
             </div>
           </form>
         </section>

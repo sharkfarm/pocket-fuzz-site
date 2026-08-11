@@ -136,7 +136,7 @@ export default function HomeClient({
             <a href="#about" className="text-stone-400 hover:text-white">
               About
             </a>
-            <a href="#shows" className="text-stone-400 hover:text-white">
+            <a href="/shows" className="text-stone-400 hover:text-white">
               Shows
             </a>
             <a href="/merch" className="text-stone-400 hover:text-white">
@@ -184,7 +184,7 @@ export default function HomeClient({
                 Listen
               </a>
               <a
-                href="#shows"
+                href="/shows"
                 className="rounded-none border border-stone-700 px-6 py-3 text-sm font-black uppercase tracking-[0.2em] text-stone-200 transition hover:border-stone-400"
               >
                 Shows

@@ -13,6 +13,21 @@ export type MerchProduct = {
 
 const SHIRT_SIZES = ["S", "M", "L", "XL", "2XL"] as const;
 
+const VENMO_FEE_RATE = 0.019;
+const VENMO_FIXED_FEE = 0.10;
+
+function calculateVenmoServiceFee(subtotal: number) {
+  if (subtotal <= 0) return 0;
+
+  const totalWithFee =
+    (subtotal + VENMO_FIXED_FEE) / (1 - VENMO_FEE_RATE);
+
+  return Math.max(
+    0,
+    Math.round((totalWithFee - subtotal) * 100) / 100
+  );
+}
+
 export default function MerchShop({
   products,
 }: {
@@ -59,10 +74,13 @@ export default function MerchShop({
     0
   );
 
-  const total = products.reduce(
+  const subtotal = products.reduce(
     (sum, product) => sum + productSubtotal(product),
     0
   );
+
+  const venmoServiceFee = calculateVenmoServiceFee(subtotal);
+  const total = subtotal + venmoServiceFee;
 
   return (
     <form action={createMerchOrder} className="mt-10">
@@ -255,11 +273,25 @@ export default function MerchShop({
               <strong>{itemCount}</strong>
             </div>
 
-            <div className="mt-3 flex items-end justify-between border-t border-stone-800 pt-5">
-              <span className="font-black uppercase">Total</span>
-              <strong className="text-3xl text-red-500">
-                {formatCurrency(total)}
-              </strong>
+            <div className="mt-5 space-y-3 border-t border-stone-800 pt-5">
+              <div className="flex items-center justify-between">
+                <span className="text-stone-400">Subtotal</span>
+                <strong>{formatCurrency(subtotal)}</strong>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-stone-400">
+                  Venmo service fee
+                </span>
+                <strong>{formatCurrency(venmoServiceFee)}</strong>
+              </div>
+
+              <div className="flex items-end justify-between border-t border-stone-800 pt-4">
+                <span className="font-black uppercase">Total</span>
+                <strong className="text-3xl text-red-500">
+                  {formatCurrency(total)}
+                </strong>
+              </div>
             </div>
 
             <button
