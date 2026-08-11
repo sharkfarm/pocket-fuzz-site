@@ -301,7 +301,7 @@ export default function HomeClient({
                           rel="noopener noreferrer"
                           className="text-xs font-black uppercase tracking-[0.18em] text-stone-400 hover:text-white"
                         >
-                          View Flyer
+                          View Flyer ↗
                         </a>
                       ) : null}
 

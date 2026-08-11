@@ -82,6 +82,9 @@ export async function updateTicketSales(formData: FormData) {
 
     const allowedChannels = ["online", "offline", "door", "reserved"];
 
+    const includeInPresalePayout =
+      formData.get(`include_in_presale_payout_${ticketId}`) === "on";
+
     const venmoServiceFee =
       formData.get(`venmo_service_fee_${ticketId}`) === "on";
 
@@ -122,6 +125,7 @@ export async function updateTicketSales(formData: FormData) {
         ticket_price: price,
         projected_quantity: projectedQuantity,
         actual_quantity: actualQuantity,
+        include_in_presale_payout: includeInPresalePayout,
         venmo_service_fee: venmoServiceFee,
       })
       .eq("id", ticketId)
@@ -159,6 +163,8 @@ export async function addTicketType(formData: FormData) {
   const allowedChannels = ["online", "offline", "door", "reserved"];
   const ticketPrice = Number(formData.get("ticket_price") ?? 0);
   const projectedQuantity = Number(formData.get("projected_quantity") ?? 0);
+  const includeInPresalePayout =
+    formData.get("include_in_presale_payout") === "on";
   const venmoServiceFee = formData.get("venmo_service_fee") === "on";
 
   if (
@@ -184,6 +190,7 @@ export async function addTicketType(formData: FormData) {
     ticket_price: ticketPrice,
     projected_quantity: projectedQuantity,
     actual_quantity: 0,
+    include_in_presale_payout: includeInPresalePayout,
     venmo_service_fee: venmoServiceFee,
   });
 
@@ -525,6 +532,9 @@ export async function updateShowSettlement(formData: FormData) {
   const showId = String(formData.get("show_id") ?? "");
   const status = String(formData.get("status") ?? "upcoming");
   const otherIncome = Number(formData.get("other_income") ?? 0);
+  const sharedDoorPayout = Number(
+    formData.get("shared_door_payout") ?? 0
+  );
 
   const validStatuses = [
     "draft",
@@ -553,11 +563,20 @@ export async function updateShowSettlement(formData: FormData) {
     );
   }
 
+  if (!Number.isFinite(sharedDoorPayout) || sharedDoorPayout < 0) {
+    redirect(
+      `/admin/shows/${showId}?error=${encodeURIComponent(
+        "Shared door payout must be a valid nonnegative number."
+      )}`
+    );
+  }
+
   const { error } = await supabase
     .from("shows")
     .update({
       status,
       other_income: otherIncome,
+      shared_door_payout: sharedDoorPayout,
     })
     .eq("id", showId);
 

@@ -41,6 +41,7 @@ type TicketSale = {
   projected_quantity: number;
   actual_quantity: number;
   venmo_service_fee: boolean;
+  include_in_presale_payout: boolean;
 };
 
 type Expense = {
@@ -130,6 +131,7 @@ export default async function ShowDetailPage({
           meals_included_ticket_threshold,
           facility_fee_per_ticket,
           package_expenses,
+          shared_door_payout,
           deal_base_percent,
           deal_tier_1_threshold,
           deal_tier_1_percent,
@@ -154,7 +156,8 @@ export default async function ShowDetailPage({
           ticket_price,
           projected_quantity,
           actual_quantity,
-          venmo_service_fee
+          venmo_service_fee,
+          include_in_presale_payout
         `
       )
       .eq("show_id", id)
@@ -258,32 +261,62 @@ export default async function ShowDetailPage({
   );
 
   const merchProfit = merchRevenue - merchCost;
+
+  // Presale/consignment tickets belong to Pocket Fuzz's own settlement.
+  // Door tickets are handled separately because the venue pools the door.
+  const presaleTickets = tickets.filter(
+    (ticket) => ticket.include_in_presale_payout !== false
+  );
+
+  const actualPresaleTickets = presaleTickets.reduce(
+    (total, ticket) => total + Number(ticket.actual_quantity),
+    0
+  );
+
+  const actualPresaleGross = presaleTickets.reduce(
+    (total, ticket) =>
+      total +
+      Number(ticket.ticket_price) *
+        Number(ticket.actual_quantity),
+    0
+  );
+
   const grossTicketRevenue = Number(show.gross_ticket_sales);
   const actualTickets = Number(show.tickets_sold);
   const facilityFeePerTicket = Number(showDetails.facility_fee_per_ticket ?? 2);
   const packageExpenses = Number(showDetails.package_expenses ?? 250);
+  const sharedDoorPayout = Number(showDetails.shared_door_payout ?? 0);
   const dealBasePercent = Number(showDetails.deal_base_percent ?? 50);
   const dealTier1Threshold = Number(showDetails.deal_tier_1_threshold ?? 50);
   const dealTier1Percent = Number(showDetails.deal_tier_1_percent ?? 60);
   const dealTier2Threshold = Number(showDetails.deal_tier_2_threshold ?? 100);
   const dealTier2Percent = Number(showDetails.deal_tier_2_percent ?? 70);
-  const actualPayoutRate = getDealRate(actualTickets, {
+
+  const actualPayoutRate = getDealRate(actualPresaleTickets, {
     basePercent: dealBasePercent,
     tier1Threshold: dealTier1Threshold,
     tier1Percent: dealTier1Percent,
     tier2Threshold: dealTier2Threshold,
     tier2Percent: dealTier2Percent,
   });
-  const actualDealNet = Math.max(
+
+  const presaleSettlementBasis = Math.max(
     0,
-    grossTicketRevenue -
-      actualTickets * facilityFeePerTicket -
-      packageExpenses
+    actualPresaleGross -
+      actualPresaleTickets * facilityFeePerTicket
   );
-  const bandTicketPayout = actualDealNet * actualPayoutRate;
+
+  const presaleConsignmentPayout =
+    presaleSettlementBasis * actualPayoutRate;
+
+  const bandTicketPayout =
+    presaleConsignmentPayout + sharedDoorPayout;
+
   const otherIncome = Number(show.other_income ?? 0);
+
   const ticketNet =
     bandTicketPayout + otherIncome - totalActualExpenses;
+
   const calculatedTotalShowProfit = ticketNet + merchProfit;
   const totalAssignedPayments = showPayments.reduce(
     (total, payment) => total + Number(payment.amount),
@@ -307,20 +340,35 @@ export default async function ShowDetailPage({
     0
   );
 
-  const projectedPayoutRate = getDealRate(projectedTickets, {
+  const projectedPresaleTickets = presaleTickets.reduce(
+    (total, ticket) => total + Number(ticket.projected_quantity),
+    0
+  );
+
+  const projectedPresaleGross = presaleTickets.reduce(
+    (total, ticket) =>
+      total +
+      Number(ticket.ticket_price) *
+        Number(ticket.projected_quantity),
+    0
+  );
+
+  const projectedPayoutRate = getDealRate(projectedPresaleTickets, {
     basePercent: dealBasePercent,
     tier1Threshold: dealTier1Threshold,
     tier1Percent: dealTier1Percent,
     tier2Threshold: dealTier2Threshold,
     tier2Percent: dealTier2Percent,
   });
+
   const projectedDealNet = Math.max(
     0,
-    projectedGross -
-      projectedTickets * facilityFeePerTicket -
-      packageExpenses
+    projectedPresaleGross -
+      projectedPresaleTickets * facilityFeePerTicket
   );
-  const projectedPayout = projectedDealNet * projectedPayoutRate;
+
+  const projectedPayout =
+    projectedDealNet * projectedPayoutRate;
 
   const capacity = Number(show.capacity);
 
@@ -680,18 +728,43 @@ export default async function ShowDetailPage({
             </h2>
 
             <p className="mt-1 text-sm text-stone-400">
-              Ticket types are unique to this show. Edit the name, channel,
-              price, projected quantity, and actual sold count below, or add and
-              remove ticket types as needed. Merchandise revenue is tracked separately.
+              Ticket types are unique to this show. Projected Tickets and
+              Projected Gross include every ticket type. Check Presale Payout
+              only for ticket types that belong in Pocket Fuzz's presale /
+              consignment settlement; leave it unchecked for the venue's shared
+              door pool.
             </p>
           </div>
 
           <div className="grid gap-4 border-b border-stone-800 p-6 sm:grid-cols-2 xl:grid-cols-5">
-            <ExpenseMetric label="Projected Tickets" value={String(projectedTickets)} />
-            <ExpenseMetric label="Projected Gross" value={formatCurrency(projectedGross)} />
-            <ExpenseMetric label="Actual Tickets" value={String(actualTickets)} />
-            <ExpenseMetric label="Ticket Revenue" value={formatCurrency(grossTicketRevenue)} />
-            <ExpenseMetric label="Band Ticket Payout" value={formatCurrency(bandTicketPayout)} />
+            <ExpenseMetric
+              label="Projected Tickets"
+              value={String(projectedTickets)}
+            />
+            <ExpenseMetric
+              label="Projected Gross"
+              value={formatCurrency(projectedGross)}
+            />
+            <ExpenseMetric
+              label="Actual Tickets"
+              value={String(actualTickets)}
+            />
+            <ExpenseMetric
+              label="Ticket Revenue"
+              value={formatCurrency(grossTicketRevenue)}
+            />
+            <ExpenseMetric
+              label="Presale / Consignment Payout"
+              value={formatCurrency(presaleConsignmentPayout)}
+            />
+            <ExpenseMetric
+              label="Shared Door Payout"
+              value={formatCurrency(sharedDoorPayout)}
+            />
+            <ExpenseMetric
+              label="Total Band Ticket Payout"
+              value={formatCurrency(bandTicketPayout)}
+            />
           </div>
 
           <form action={updateTicketSales}>
@@ -707,8 +780,21 @@ export default async function ShowDetailPage({
               <ExpenseField label="Tier 2 Deal %" name="deal_tier_2_percent" type="number" min="0" step="0.01" defaultValue={String(dealTier2Percent)} />
               <div className="rounded-lg border border-stone-700 bg-stone-950 p-4 text-sm text-stone-300">
                 <p className="font-black uppercase">Current Calculation</p>
-                <p className="mt-2">Gross less {formatCurrency(facilityFeePerTicket)} × {actualTickets} tickets and {formatCurrency(packageExpenses)} package expenses.</p>
-                <p className="mt-2 font-bold">Payout basis: {formatCurrency(actualDealNet)}</p>
+                <p className="mt-2">
+                  Presale/consignment: {formatCurrency(actualPresaleGross)}
+                  {" "}gross less {formatCurrency(facilityFeePerTicket)} ×{" "}
+                  {actualPresaleTickets} tickets, then{" "}
+                  {Math.round(actualPayoutRate * 100)}%.
+                </p>
+                <p className="mt-2">
+                  The {formatCurrency(packageExpenses)} venue/house amount is
+                  tracked as a contract reference. It is not deducted from
+                  Pocket Fuzz's own presale payout here. Enter the band's actual
+                  share of the pooled door in Show Settlement.
+                </p>
+                <p className="mt-2 font-bold">
+                  Presale payout basis: {formatCurrency(presaleSettlementBasis)}
+                </p>
               </div>
             </div>
 
@@ -722,6 +808,7 @@ export default async function ShowDetailPage({
                     <th className="px-6 py-4">Projected</th>
                     <th className="px-6 py-4">Actual Sold</th>
                     <th className="px-6 py-4">Revenue</th>
+                    <th className="px-6 py-4">Presale Payout</th>
                     <th className="px-6 py-4">Venmo Fee</th>
                     <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
@@ -813,6 +900,20 @@ export default async function ShowDetailPage({
                           <label className="inline-flex items-center gap-2 text-sm font-semibold">
                             <input
                               type="checkbox"
+                              name={`include_in_presale_payout_${ticket.id}`}
+                              defaultChecked={
+                                ticket.include_in_presale_payout !== false
+                              }
+                              className="h-4 w-4"
+                            />
+                            Include
+                          </label>
+                        </td>
+
+                        <td className="px-6 py-5">
+                          <label className="inline-flex items-center gap-2 text-sm font-semibold">
+                            <input
+                              type="checkbox"
                               name={`venmo_service_fee_${ticket.id}`}
                               defaultChecked={Boolean(ticket.venmo_service_fee)}
                               className="h-4 w-4"
@@ -889,7 +990,7 @@ export default async function ShowDetailPage({
 
             <form
               action={addTicketType}
-              className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-6"
+              className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-7"
             >
               <input type="hidden" name="show_id" value={id} />
 
@@ -936,6 +1037,20 @@ export default async function ShowDetailPage({
                 defaultValue="0"
                 required
               />
+
+              <label className="flex items-end">
+                <span className="flex w-full items-center gap-3 rounded-lg border border-stone-700 bg-stone-950 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    name="include_in_presale_payout"
+                    defaultChecked
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm font-semibold">
+                    Presale Payout
+                  </span>
+                </span>
+              </label>
 
               <label className="flex items-end">
                 <span className="flex w-full items-center gap-3 rounded-lg border border-stone-700 bg-stone-950 px-4 py-3">
@@ -1322,16 +1437,17 @@ export default async function ShowDetailPage({
            </h2>
 
            <p className="mt-1 text-sm text-stone-400">
-              Finalize ticket settlement separately from merchandise. Other
-              income is included with ticket/show operations; merch remains its
-              own revenue, cost, and profit calculation.
+              Presale/consignment payout is calculated from Pocket Fuzz's own
+              ticket sales. Enter the band's actual share of the pooled door
+              separately after the venue settles it. Merchandise remains separate.
            </p>
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            <ExpenseMetric label="Ticket Revenue" value={formatCurrency(grossTicketRevenue)} />
-            <ExpenseMetric label="Band Ticket Payout" value={formatCurrency(bandTicketPayout)} />
-            <ExpenseMetric label="Show Expenses" value={formatCurrency(totalActualExpenses)} />
+            <ExpenseMetric label="Presale Gross" value={formatCurrency(actualPresaleGross)} />
+            <ExpenseMetric label="Presale / Consignment" value={formatCurrency(presaleConsignmentPayout)} />
+            <ExpenseMetric label="Shared Door" value={formatCurrency(sharedDoorPayout)} />
+            <ExpenseMetric label="Total Ticket Payout" value={formatCurrency(bandTicketPayout)} />
             <ExpenseMetric label="Ticket Net" value={formatCurrency(ticketNet)} />
             <ExpenseMetric label="Merch Profit" value={formatCurrency(merchProfit)} />
           </div>
@@ -1366,6 +1482,15 @@ export default async function ShowDetailPage({
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
+
+           <ExpenseField
+             label="Shared Door Payout"
+             name="shared_door_payout"
+             type="number"
+             defaultValue={String(sharedDoorPayout.toFixed(2))}
+             min="0"
+             step="0.01"
+            />
 
            <ExpenseField
              label="Other Income"
@@ -1632,7 +1757,15 @@ export default async function ShowDetailPage({
                 value={`${Math.round(projectedPayoutRate * 100)}%`}
               />
               <SummaryRow
-                label="Projected band payout"
+                label="Projected presale tickets"
+                value={String(projectedPresaleTickets)}
+              />
+              <SummaryRow
+                label="Projected presale gross"
+                value={formatCurrency(projectedPresaleGross)}
+              />
+              <SummaryRow
+                label="Projected presale payout"
                 value={formatCurrency(projectedPayout)}
                 emphasize
               />

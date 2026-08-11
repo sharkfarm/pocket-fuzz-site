@@ -29,6 +29,7 @@ export default async function ShowsPage({
     { data: expenses },
     { data: showTerms },
     { data: merchSales },
+    { data: ticketSales },
   ] = await Promise.all([
     supabase
       .from("show_financial_summary")
@@ -50,12 +51,17 @@ export default async function ShowsPage({
         deal_tier_1_percent,
         deal_tier_2_threshold,
         deal_tier_2_percent,
-        other_income
+        other_income,
+        shared_door_payout
       `),
 
     supabase
       .from("merch_sales")
       .select("show_id,quantity_sold,unit_price,unit_cost"),
+
+    supabase
+      .from("ticket_sales")
+      .select("show_id,channel,ticket_price,actual_quantity,include_in_presale_payout"),
   ]);
 
   const outstandingReimbursements = (expenses ?? [])
@@ -79,6 +85,19 @@ export default async function ShowsPage({
     );
   }
 
+  const ticketsByShow = new Map<string, Array<{
+    channel: string;
+    ticket_price: number | string;
+    actual_quantity: number | string;
+    include_in_presale_payout: boolean;
+  }>>();
+
+  for (const ticket of ticketSales ?? []) {
+    const current = ticketsByShow.get(ticket.show_id) ?? [];
+    current.push(ticket);
+    ticketsByShow.set(ticket.show_id, current);
+  }
+
   const merchProfitByShow = new Map<string, number>();
 
   for (const item of merchSales ?? []) {
@@ -99,15 +118,27 @@ export default async function ShowsPage({
       return show;
     }
 
-    const ticketsSold = Number(show.tickets_sold ?? 0);
-    const grossTicketRevenue = Number(show.gross_ticket_sales ?? 0);
+    const showTickets = ticketsByShow.get(show.show_id) ?? [];
+    const presaleTickets = showTickets.filter(
+      (ticket) => ticket.include_in_presale_payout !== false
+    );
+
+    const ticketsSold = presaleTickets.reduce(
+      (sum, ticket) =>
+        sum + Number(ticket.actual_quantity ?? 0),
+      0
+    );
+
+    const grossTicketRevenue = presaleTickets.reduce(
+      (sum, ticket) =>
+        sum +
+        Number(ticket.ticket_price ?? 0) *
+          Number(ticket.actual_quantity ?? 0),
+      0
+    );
 
     const facilityFeePerTicket = Number(
       terms.facility_fee_per_ticket ?? 2
-    );
-
-    const packageExpenses = Number(
-      terms.package_expenses ?? 250
     );
 
     const basePercent = Number(
@@ -140,11 +171,16 @@ export default async function ShowsPage({
     const payoutBasis = Math.max(
       0,
       grossTicketRevenue -
-        ticketsSold * facilityFeePerTicket -
-        packageExpenses
+        ticketsSold * facilityFeePerTicket
     );
 
-    const ticketPayout = payoutBasis * payoutRate;
+    const presalePayout = payoutBasis * payoutRate;
+    const sharedDoorPayout = Number(
+      terms.shared_door_payout ?? 0
+    );
+
+    const ticketPayout =
+      presalePayout + sharedDoorPayout;
 
     const totalExpenses =
       expensesByShow.get(show.show_id) ?? 0;
