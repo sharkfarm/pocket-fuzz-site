@@ -43,6 +43,7 @@ export default function HomeClient({
 }: {
   upcomingShows: PublicHomeShow[];
 }) {
+  console.log("HOMECLIENT SHOWS:", upcomingShows);
   const band = {
     name: "Pocket Fuzz",
     tagline: "Fuzzed-out riffs. Big drums. No wasted motion.",

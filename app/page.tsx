@@ -34,8 +34,11 @@ export default async function HomePage() {
     .limit(4);
 
   if (error) {
-    console.error("Could not load homepage shows:", error.message);
+    //console.error("Could not load homepage shows:", error.message);
+    console.error("PUBLIC SHOW QUERY ERROR:", error);
   }
+
+  console.log("PUBLIC SHOW DATA:", data);
 
   return (
     <HomeClient
