@@ -138,6 +138,13 @@ export default async function ShowDetailPage({
           deal_tier_2_threshold,
           deal_tier_2_percent,
           notes,
+
+          is_public,
+          public_slug,
+          public_description,
+          flyer_url,
+          featured,
+
           venues (
             name
           )
@@ -708,6 +715,66 @@ export default async function ShowDetailPage({
                 className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 outline-none focus:border-red-500"
                 placeholder="Set times, load-in details, parking, venue contact, settlement notes..."
               />
+            </div>
+
+            <div className="border-t border-stone-800 pt-8">
+              <h3 className="font-black uppercase">Website</h3>
+              <p className="mt-1 text-sm text-stone-400">
+                Control how this show appears on the public Pocket Fuzz website.
+              </p>
+
+              <div className="mt-5 grid gap-5 md:grid-cols-2">
+                <label className="flex items-center gap-3 rounded-lg border border-stone-700 bg-stone-950 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    name="is_public"
+                    defaultChecked={Boolean(showDetails.is_public)}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm font-semibold">Show on Website</span>
+                </label>
+
+                <label className="flex items-center gap-3 rounded-lg border border-stone-700 bg-stone-950 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    name="featured"
+                    defaultChecked={Boolean(showDetails.featured)}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm font-semibold">Featured Show</span>
+                </label>
+
+                <ExpenseField
+                  label="Public URL Slug"
+                  name="public_slug"
+                  defaultValue={showDetails.public_slug ?? ""}
+                  placeholder="globe-hall-august-9-2026"
+                />
+
+                <ExpenseField
+                  label="Flyer URL"
+                  name="flyer_url"
+                  defaultValue={showDetails.flyer_url ?? ""}
+                  placeholder="/images/globe-hall.png"
+                />
+
+                <div className="md:col-span-2">
+                  <label
+                    htmlFor="public_description"
+                    className="mb-2 block text-sm font-semibold"
+                  >
+                    Public Description
+                  </label>
+                  <textarea
+                    id="public_description"
+                    name="public_description"
+                    rows={4}
+                    defaultValue={showDetails.public_description ?? ""}
+                    className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 outline-none focus:border-red-500"
+                    placeholder="Public show details, lineup, age restriction, doors, parking, and ticket notes..."
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="flex justify-end">
