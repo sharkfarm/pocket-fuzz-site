@@ -42,10 +42,6 @@ export default async function HomePage() {
 
   return (
     <>
-      <div className="bg-yellow-300 p-3 text-black">
-       SERVER SHOW COUNT: {data?.length ?? 0}
-     </div>
-    
       <HomeClient
        upcomingShows={(data ?? []) as PublicHomeShow[]}
      />
