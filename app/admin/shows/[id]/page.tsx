@@ -560,6 +560,7 @@ export default async function ShowDetailPage({
 
           <form
             action={updateShowDetails}
+            encType="multipart/form-data"
             className="mt-6 space-y-8"
           >
             <input
