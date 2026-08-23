@@ -641,7 +641,8 @@ export async function updateShowDetails(formData: FormData) {
   const publicDescription = String(
     formData.get("public_description") ?? ""
   ).trim();
-  const flyerUrl = String(formData.get("flyer_url") ?? "").trim();
+  let flyerUrl = String(formData.get("flyer_url") ?? "").trim();
+  const flyerFile = formData.get("flyer_file");
   const ticketSalesStatus = String(
     formData.get("ticket_sales_status") ?? "coming_soon"
   ).trim();
@@ -656,6 +657,58 @@ export async function updateShowDetails(formData: FormData) {
     .replace(/^-+|-+$/g, "");
 
   const publicSlug = publicSlugInput || (isPublic ? generatedSlug : "");
+
+  if (flyerFile instanceof File && flyerFile.size > 0) {
+    const allowedFlyerTypes = ["image/jpeg", "image/png", "image/webp"];
+    const maxFlyerBytes = 10 * 1024 * 1024;
+
+    if (!allowedFlyerTypes.includes(flyerFile.type)) {
+      redirect(
+        `/admin/shows/${showId}?error=${encodeURIComponent(
+          "Flyer must be a JPG, PNG, or WebP image."
+        )}`
+      );
+    }
+
+    if (flyerFile.size > maxFlyerBytes) {
+      redirect(
+        `/admin/shows/${showId}?error=${encodeURIComponent(
+          "Flyer image must be 10 MB or smaller."
+        )}`
+      );
+    }
+
+    const extension =
+      flyerFile.type === "image/png"
+        ? "png"
+        : flyerFile.type === "image/webp"
+          ? "webp"
+          : "jpg";
+
+    const flyerPath = `${showId}/${Date.now()}-${generatedSlug || "show"}.${extension}`;
+    const flyerBytes = await flyerFile.arrayBuffer();
+
+    const { error: flyerUploadError } = await supabase.storage
+      .from("show-flyers")
+      .upload(flyerPath, flyerBytes, {
+        contentType: flyerFile.type,
+        upsert: true,
+      });
+
+    if (flyerUploadError) {
+      redirect(
+        `/admin/shows/${showId}?error=${encodeURIComponent(
+          `Could not upload flyer: ${flyerUploadError.message}`
+        )}`
+      );
+    }
+
+    const { data: flyerPublicUrl } = supabase.storage
+      .from("show-flyers")
+      .getPublicUrl(flyerPath);
+
+    flyerUrl = flyerPublicUrl.publicUrl;
+  }
 
   if (!showId || !venueName || !showDate) {
     redirect(

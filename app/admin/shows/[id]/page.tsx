@@ -752,12 +752,41 @@ export default async function ShowDetailPage({
                   placeholder="moes-original-bbq-2026-09-11"
                 />
 
-                <ExpenseField
-                  label="Flyer URL"
-                  name="flyer_url"
-                  defaultValue={showDetails.flyer_url ?? ""}
-                  placeholder="/images/moes-flyer.jpg"
-                />
+                <div className="md:col-span-2 rounded-lg border border-stone-700 bg-stone-950 p-4">
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-semibold">
+                      Show Flyer
+                    </span>
+                    <input
+                      type="file"
+                      name="flyer_file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="block w-full text-sm text-stone-300 file:mr-4 file:rounded-md file:border-0 file:bg-red-600 file:px-4 file:py-2 file:font-bold file:text-white hover:file:bg-red-500"
+                    />
+                    <span className="mt-2 block text-xs text-stone-500">
+                      JPG, PNG, or WebP. Uploading a file replaces the current flyer.
+                    </span>
+                  </label>
+
+                  <input
+                    type="hidden"
+                    name="flyer_url"
+                    value={showDetails.flyer_url ?? ""}
+                  />
+
+                  {showDetails.flyer_url ? (
+                    <div className="mt-4">
+                      <p className="mb-2 text-xs font-black uppercase tracking-wide text-stone-500">
+                        Current Flyer
+                      </p>
+                      <img
+                        src={showDetails.flyer_url}
+                        alt={`${showDetails.show_name ?? "Show"} flyer`}
+                        className="max-h-72 rounded-lg border border-stone-800 object-contain"
+                      />
+                    </div>
+                  ) : null}
+                </div>
 
                 <label className="block">
                   <span className="mb-2 block text-sm font-semibold">
