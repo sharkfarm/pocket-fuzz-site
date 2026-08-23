@@ -637,18 +637,38 @@ export async function updateShowDetails(formData: FormData) {
 
   const isPublic = formData.get("is_public") === "on";
   const featured = formData.get("featured") === "on";
-  const requestedPublicSlug = String(
-    formData.get("public_slug") ?? ""
-  ).trim();
+  const publicSlugInput = String(formData.get("public_slug") ?? "").trim();
   const publicDescription = String(
     formData.get("public_description") ?? ""
   ).trim();
   const flyerUrl = String(formData.get("flyer_url") ?? "").trim();
+  const ticketSalesStatus = String(
+    formData.get("ticket_sales_status") ?? "coming_soon"
+  ).trim();
+
+  const allowedTicketSalesStatuses = ["coming_soon", "on_sale"];
+
+  const slugSource = showName || venueName || "pocket-fuzz-show";
+  const generatedSlug = `${slugSource}-${showDate}`
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  const publicSlug = publicSlugInput || (isPublic ? generatedSlug : "");
 
   if (!showId || !venueName || !showDate) {
     redirect(
       `/admin/shows/${showId}?error=${encodeURIComponent(
         "Venue and show date are required."
+      )}`
+    );
+  }
+
+  if (!allowedTicketSalesStatuses.includes(ticketSalesStatus)) {
+    redirect(
+      `/admin/shows/${showId}?error=${encodeURIComponent(
+        "Invalid ticket sales status."
       )}`
     );
   }
@@ -715,18 +735,6 @@ export async function updateShowDetails(formData: FormData) {
     venueId = newVenue.id;
   }
 
-  const generatedPublicSlug = `${showName || venueName}-${showDate}`
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-  const publicSlug = requestedPublicSlug
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || generatedPublicSlug;
-
   const { error } = await supabase
     .from("shows")
     .update({
@@ -746,9 +754,10 @@ export async function updateShowDetails(formData: FormData) {
       notes: notes || null,
       is_public: isPublic,
       featured,
-      public_slug: isPublic ? publicSlug : requestedPublicSlug || null,
+      public_slug: publicSlug || null,
       public_description: publicDescription || null,
       flyer_url: flyerUrl || null,
+      ticket_sales_status: ticketSalesStatus,
     })
     .eq("id", showId);
 
@@ -762,6 +771,9 @@ export async function updateShowDetails(formData: FormData) {
   revalidatePath(`/admin/shows/${showId}`);
   revalidatePath("/");
   revalidatePath("/shows");
+  if (publicSlug) {
+    revalidatePath(`/shows/${publicSlug}`);
+  }
 
   redirect(`/admin/shows/${showId}?saved=show-details`);
 }

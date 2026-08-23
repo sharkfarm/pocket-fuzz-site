@@ -144,6 +144,7 @@ export default async function ShowDetailPage({
           public_description,
           flyer_url,
           featured,
+          ticket_sales_status,
 
           venues (
             name
@@ -720,7 +721,7 @@ export default async function ShowDetailPage({
             <div className="border-t border-stone-800 pt-8">
               <h3 className="font-black uppercase">Website</h3>
               <p className="mt-1 text-sm text-stone-400">
-                Control how this show appears on the public Pocket Fuzz website.
+                Control how this show appears on the public Pocket Fuzz website and when ticket sales are available.
               </p>
 
               <div className="mt-5 grid gap-5 md:grid-cols-2">
@@ -748,15 +749,29 @@ export default async function ShowDetailPage({
                   label="Public URL Slug"
                   name="public_slug"
                   defaultValue={showDetails.public_slug ?? ""}
-                  placeholder="globe-hall-august-9-2026"
+                  placeholder="moes-original-bbq-2026-09-11"
                 />
 
                 <ExpenseField
                   label="Flyer URL"
                   name="flyer_url"
                   defaultValue={showDetails.flyer_url ?? ""}
-                  placeholder="/images/globe-hall.png"
+                  placeholder="/images/moes-flyer.jpg"
                 />
+
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold">
+                    Ticket Sales Status
+                  </span>
+                  <select
+                    name="ticket_sales_status"
+                    defaultValue={showDetails.ticket_sales_status ?? "coming_soon"}
+                    className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 outline-none focus:border-red-500"
+                  >
+                    <option value="coming_soon">Coming Soon</option>
+                    <option value="on_sale">On Sale</option>
+                  </select>
+                </label>
 
                 <div className="md:col-span-2">
                   <label
@@ -771,7 +786,7 @@ export default async function ShowDetailPage({
                     rows={4}
                     defaultValue={showDetails.public_description ?? ""}
                     className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 outline-none focus:border-red-500"
-                    placeholder="Public show details, lineup, age restriction, doors, parking, and ticket notes..."
+                    placeholder="Who is playing, age restrictions, doors, or other public show information..."
                   />
                 </div>
               </div>

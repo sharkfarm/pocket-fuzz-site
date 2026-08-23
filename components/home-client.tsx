@@ -249,79 +249,79 @@ export default function HomeClient({
             </Link>
           </div>
 
-          {upcomingShows.length > 0 ? (
-            <div className="mt-8 grid gap-4">
-              {upcomingShows.map((show) => {
-                const venue = Array.isArray(show.venues)
-                  ? show.venues[0]
-                  : show.venues;
-
-                return (
-                  <article
-                    key={show.id}
-                    className="grid gap-5 border border-stone-800 bg-black/30 p-6 md:grid-cols-[220px_1fr_auto] md:items-center"
-                  >
-                    <div className="whitespace-nowrap text-sm font-black uppercase tracking-[0.2em] text-red-500">
-                      {formatShowDate(show.show_date)}
-                    </div>
-
-                    <div>
-                      {show.featured ? (
-                        <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-red-400">
-                          Featured Show
-                        </p>
-                      ) : null}
-
-                      <h3 className="text-2xl font-bold uppercase">
-                        {show.show_name || "Pocket Fuzz Show"}
-                      </h3>
-
-                      <p className="mt-2 text-sm uppercase tracking-wider text-stone-500">
-                        {venue?.name || "Venue TBA"}
-                        {venue?.city
-                          ? ` · ${venue.city}${venue.state ? `, ${venue.state}` : ""}`
-                          : ""}
-                      </p>
-
-                      <p className="mt-2 text-sm uppercase tracking-wider text-stone-400">
-                        {formatShowTime(show.start_time)}
-                      </p>
-
-                      {show.public_description ? (
-                        <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-400">
-                          {show.public_description}
-                        </p>
-                      ) : null}
-                    </div>
-
-                    <div className="flex flex-col gap-3 md:items-end">
-                      {show.flyer_url ? (
-                        <a
-                          href={show.flyer_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-black uppercase tracking-[0.18em] text-stone-400 hover:text-white"
-                        >
-                          View Flyer ↗
-                        </a>
-                      ) : null}
-
-                      <Link
-                        href={`/shows/${show.public_slug}`}
-                        className="border border-red-600 bg-red-600 px-5 py-3 text-center text-xs font-black uppercase tracking-[0.18em] text-white transition hover:bg-red-700"
-                      >
-                        Tickets & Details
-                      </Link>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          ) : (
+          {upcomingShows.length === 0 && (
             <div className="mt-8 border border-stone-800 bg-black/30 p-8 text-stone-400">
               New shows coming soon.
             </div>
           )}
+
+          <div className="mt-8 grid gap-4">
+            {upcomingShows.map((show) => {
+              const venue = Array.isArray(show.venues)
+                ? show.venues[0]
+                : show.venues;
+
+              return (
+               <article
+                    key={show.id}
+                  className="grid gap-5 border border-stone-800 bg-black/30 p-6 md:grid-cols-[220px_1fr_auto] md:items-center"
+                >
+                  <div className="whitespace-nowrap text-sm font-black uppercase tracking-[0.2em] text-red-500">
+                    {formatShowDate(show.show_date)}
+                 </div>
+
+                 <div>
+                   {show.featured && (
+                      <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-red-400">
+                        Featured Show
+                     </p>
+                   )}
+
+                   <h3 className="text-2xl font-bold uppercase">
+                     {show.show_name || "Pocket Fuzz Show"}
+                   </h3>
+
+                   <p className="mt-2 text-sm uppercase tracking-wider text-stone-500">
+                     {venue?.name || "Venue TBA"}
+                     {venue?.city
+                       ? ` · ${venue.city}${venue.state ? `, ${venue.state}` : ""}`
+                       : ""}
+                    </p>
+
+                   <p className="mt-2 text-sm uppercase tracking-wider text-stone-400">
+                     {formatShowTime(show.start_time)}
+                   </p>
+
+                   {show.public_description && (
+                     <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-400">
+                       {show.public_description}
+                     </p>
+                   )}
+                  </div>
+
+                  <div className="flex flex-col gap-3 md:items-end">
+                    {show.flyer_url && (
+                     <a
+                       href={show.flyer_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                       className="text-xs font-black uppercase tracking-[0.18em] text-stone-400 hover:text-white"
+                     >
+                       View Flyer ↗
+                      </a>
+                    )}
+
+                    <Link
+                      href={`/shows/${show.public_slug}`}
+                      className="border border-red-600 bg-red-600 px-5 py-3 text-center text-xs font-black uppercase tracking-[0.18em] text-white transition hover:bg-red-700"
+                    >
+                     Tickets & Details
+                   </Link>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
         </div>
       </section>
 

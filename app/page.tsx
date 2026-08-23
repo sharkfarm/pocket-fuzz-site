@@ -41,9 +41,15 @@ export default async function HomePage() {
   console.log("PUBLIC SHOW DATA:", data);
 
   return (
-    <HomeClient
-      upcomingShows={(data ?? []) as PublicHomeShow[]}
-    />
+    <>
+      <div className="bg-yellow-300 p-3 text-black">
+       SERVER SHOW COUNT: {data?.length ?? 0}
+     </div>
+    
+      <HomeClient
+       upcomingShows={(data ?? []) as PublicHomeShow[]}
+     />
+    </>
   );
 }
 
