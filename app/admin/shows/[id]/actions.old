@@ -80,18 +80,7 @@ export async function updateTicketSales(formData: FormData) {
       formData.get(`ticket_channel_${ticketId}`) ?? ""
     ).trim();
 
-    const ticketMode = String(
-      formData.get(`ticket_mode_${ticketId}`) ?? "standard"
-    ).trim();
-    const externalUrl = String(
-      formData.get(`external_url_${ticketId}`) ?? ""
-    ).trim();
-    const publicNote = String(
-      formData.get(`public_note_${ticketId}`) ?? ""
-    ).trim();
-
     const allowedChannels = ["online", "offline", "door", "reserved"];
-    const allowedTicketModes = ["standard", "external"];
 
     const includeInPresalePayout =
       formData.get(`include_in_presale_payout_${ticketId}`) === "on";
@@ -114,8 +103,6 @@ export async function updateTicketSales(formData: FormData) {
     if (
       !ticketType ||
       !allowedChannels.includes(channel) ||
-      !allowedTicketModes.includes(ticketMode) ||
-      (ticketMode === "external" && !externalUrl) ||
       !Number.isFinite(price) ||
       !Number.isInteger(projectedQuantity) ||
       !Number.isInteger(actualQuantity) ||
@@ -135,14 +122,11 @@ export async function updateTicketSales(formData: FormData) {
       .update({
         ticket_type: ticketType,
         channel,
-        ticket_mode: ticketMode,
-        external_url: ticketMode === "external" ? externalUrl : null,
-        public_note: ticketMode === "external" ? publicNote || null : null,
-        ticket_price: ticketMode === "external" ? 0 : price,
-        projected_quantity: ticketMode === "external" ? 0 : projectedQuantity,
-        actual_quantity: ticketMode === "external" ? 0 : actualQuantity,
-        include_in_presale_payout: ticketMode === "external" ? false : includeInPresalePayout,
-        venmo_service_fee: ticketMode === "external" ? false : venmoServiceFee,
+        ticket_price: price,
+        projected_quantity: projectedQuantity,
+        actual_quantity: actualQuantity,
+        include_in_presale_payout: includeInPresalePayout,
+        venmo_service_fee: venmoServiceFee,
       })
       .eq("id", ticketId)
       .eq("show_id", showId);
@@ -175,12 +159,8 @@ export async function addTicketType(formData: FormData) {
 
   const showId = String(formData.get("show_id") ?? "");
   const ticketType = String(formData.get("ticket_type") ?? "").trim();
-  const ticketMode = String(formData.get("ticket_mode") ?? "standard").trim();
-  const externalUrl = String(formData.get("external_url") ?? "").trim();
-  const publicNote = String(formData.get("public_note") ?? "").trim();
-  const channel = String(formData.get("channel") ?? "online").trim();
+  const channel = String(formData.get("channel") ?? "").trim();
   const allowedChannels = ["online", "offline", "door", "reserved"];
-  const allowedTicketModes = ["standard", "external"];
   const ticketPrice = Number(formData.get("ticket_price") ?? 0);
   const projectedQuantity = Number(formData.get("projected_quantity") ?? 0);
   const includeInPresalePayout =
@@ -191,8 +171,6 @@ export async function addTicketType(formData: FormData) {
     !showId ||
     !ticketType ||
     !allowedChannels.includes(channel) ||
-    !allowedTicketModes.includes(ticketMode) ||
-    (ticketMode === "external" && !externalUrl) ||
     !Number.isFinite(ticketPrice) ||
     ticketPrice < 0 ||
     !Number.isInteger(projectedQuantity) ||
@@ -209,14 +187,11 @@ export async function addTicketType(formData: FormData) {
     show_id: showId,
     ticket_type: ticketType,
     channel,
-    ticket_mode: ticketMode,
-    external_url: ticketMode === "external" ? externalUrl : null,
-    public_note: ticketMode === "external" ? publicNote || null : null,
-    ticket_price: ticketMode === "external" ? 0 : ticketPrice,
-    projected_quantity: ticketMode === "external" ? 0 : projectedQuantity,
+    ticket_price: ticketPrice,
+    projected_quantity: projectedQuantity,
     actual_quantity: 0,
-    include_in_presale_payout: ticketMode === "external" ? false : includeInPresalePayout,
-    venmo_service_fee: ticketMode === "external" ? false : venmoServiceFee,
+    include_in_presale_payout: includeInPresalePayout,
+    venmo_service_fee: venmoServiceFee,
   });
 
   if (error) {

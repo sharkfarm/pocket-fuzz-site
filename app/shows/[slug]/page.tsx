@@ -47,7 +47,7 @@ export default async function PublicShowPage({
 
   const { data: tickets, error: ticketError } = await supabase
     .from("ticket_sales")
-    .select("id,ticket_type,ticket_price,channel,venmo_service_fee")
+    .select("id,ticket_type,ticket_price,channel,venmo_service_fee,ticket_mode,external_url,public_note")
     .eq("show_id", show.id)
     .order("created_at");
 
@@ -61,6 +61,13 @@ export default async function PublicShowPage({
 
   const ticketsComingSoon =
     show.ticket_sales_status === "coming_soon";
+
+  const standardTickets = (tickets ?? []).filter(
+    (ticket) => ticket.ticket_mode !== "external"
+  );
+  const externalTickets = (tickets ?? []).filter(
+    (ticket) => ticket.ticket_mode === "external"
+  );
 
   return (
     <main className="min-h-screen bg-stone-950 px-6 py-12 text-stone-100">
@@ -131,68 +138,47 @@ export default async function PublicShowPage({
             </p>
           </section>
         ) : (
-          <form
-            action={createVenmoOrder}
-            className="mt-10 space-y-8 rounded-2xl border border-stone-800 bg-stone-900 p-6 md:p-8"
-          >
-            <input type="hidden" name="show_id" value={show.id} />
-            <input type="hidden" name="slug" value={slug} />
+          <div className="mt-10 space-y-6">
+            {externalTickets.map((ticket) => (
+              <section key={ticket.id} className="rounded-2xl border border-stone-800 bg-stone-900 p-6 md:p-8">
+                <p className="text-xs font-black uppercase tracking-[0.3em] text-red-500">Tickets</p>
+                <h2 className="mt-2 text-2xl font-black uppercase">{ticket.ticket_type}</h2>
+                {ticket.public_note ? <p className="mt-3 text-stone-300">{ticket.public_note}</p> : null}
+                <a href={ticket.external_url ?? "#"} target="_blank" rel="noopener noreferrer" className="mt-5 inline-block rounded-lg bg-red-600 px-6 py-4 font-black uppercase tracking-wide text-white hover:bg-red-500">
+                  {ticket.ticket_type} ↗
+                </a>
+              </section>
+            ))}
 
-            <section>
-              <h2 className="text-xl font-black uppercase">Tickets</h2>
-
-              <div className="mt-4 space-y-3">
-                {(tickets ?? []).map((ticket) => (
-                  <OrderRow
-                    key={ticket.id}
-                    name={`ticket_${ticket.id}`}
-                    label={ticket.ticket_type}
-                    price={Number(ticket.ticket_price)}
-                    venmoServiceFee={Boolean(ticket.venmo_service_fee)}
-                  />
-                ))}
-
-                {(tickets ?? []).length === 0 ? (
-                  <div className="rounded-xl border border-stone-800 bg-stone-950 p-5 text-stone-400">
-                    Ticket options have not been added yet.
+            {standardTickets.length > 0 ? (
+              <form action={createVenmoOrder} className="space-y-8 rounded-2xl border border-stone-800 bg-stone-900 p-6 md:p-8">
+                <input type="hidden" name="show_id" value={show.id} />
+                <input type="hidden" name="slug" value={slug} />
+                <section>
+                  <h2 className="text-xl font-black uppercase">Pocket Fuzz Tickets</h2>
+                  <div className="mt-4 space-y-3">
+                    {standardTickets.map((ticket) => (
+                      <OrderRow key={ticket.id} name={`ticket_${ticket.id}`} label={ticket.ticket_type} price={Number(ticket.ticket_price)} venmoServiceFee={Boolean(ticket.venmo_service_fee)} />
+                    ))}
                   </div>
-                ) : null}
-              </div>
-            </section>
+                </section>
+                <section>
+                  <h2 className="text-xl font-black uppercase">Your Information</h2>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <Field label="Name" name="customer_name" required />
+                    <Field label="Email" name="customer_email" type="email" required />
+                    <Field label="Phone" name="customer_phone" type="tel" />
+                  </div>
+                </section>
+                <button type="submit" className="w-full rounded-lg bg-red-600 px-6 py-4 font-black uppercase tracking-wide hover:bg-red-500">Continue to Venmo</button>
+                <p className="text-center text-xs text-stone-500">Your ticket selections are saved before Venmo opens.</p>
+              </form>
+            ) : null}
 
-            <section>
-              <h2 className="text-xl font-black uppercase">
-                Your Information
-              </h2>
-
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <Field label="Name" name="customer_name" required />
-                <Field
-                  label="Email"
-                  name="customer_email"
-                  type="email"
-                  required
-                />
-                <Field
-                  label="Phone"
-                  name="customer_phone"
-                  type="tel"
-                />
-              </div>
-            </section>
-
-            <button
-              type="submit"
-              disabled={(tickets ?? []).length === 0}
-              className="w-full rounded-lg bg-red-600 px-6 py-4 font-black uppercase tracking-wide hover:bg-red-500 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400"
-            >
-              Continue to Venmo
-            </button>
-
-            <p className="text-center text-xs text-stone-500">
-              Your ticket selections are saved before Venmo opens.
-            </p>
-          </form>
+            {standardTickets.length === 0 && externalTickets.length === 0 ? (
+              <div className="rounded-xl border border-stone-800 bg-stone-900 p-6 text-stone-400">Ticket options have not been added yet.</div>
+            ) : null}
+          </div>
         )}
       </div>
     </main>
