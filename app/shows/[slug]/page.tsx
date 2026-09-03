@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createVenmoOrder } from "./buy/actions";
+import MetaCheckoutButton from "./meta-checkout-button";
 
 type PageProps = {
   params: Promise<{
@@ -170,7 +171,7 @@ export default async function PublicShowPage({
                     <Field label="Phone" name="customer_phone" type="tel" />
                   </div>
                 </section>
-                <button type="submit" className="w-full rounded-lg bg-red-600 px-6 py-4 font-black uppercase tracking-wide hover:bg-red-500">Continue to Venmo</button>
+                <MetaCheckoutButton />
                 <p className="text-center text-xs text-stone-500">Your ticket selections are saved before Venmo opens.</p>
               </form>
             ) : null}
