@@ -1,36 +1,66 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 
-export default function MetaCheckoutButton() {
-  const [submitting, setSubmitting] = useState(false);
+type Fbq = ((...args: unknown[]) => void) & {
+  callMethod?: (...args: unknown[]) => void;
+  queue: unknown[][];
+  push: Fbq;
+  loaded: boolean;
+  version: string;
+};
 
-  function handleClick(event: React.MouseEvent<HTMLButtonElement>) {
-    event.preventDefault();
+declare global {
+  interface Window {
+    fbq?: Fbq;
+    _fbq?: Fbq;
+    __pocketFuzzMetaPixelInitialized?: boolean;
+  }
+}
 
-    if (submitting) return;
+const PIXEL_ID = "1615201226612136";
 
-    setSubmitting(true);
-
-    if (typeof window !== "undefined" && typeof window.fbq === "function") {
-      window.fbq("track", "InitiateCheckout");
+export default function MetaPixel() {
+  useEffect(() => {
+    if (window.__pocketFuzzMetaPixelInitialized) {
+      return;
     }
 
-    const form = event.currentTarget.form;
+    window.__pocketFuzzMetaPixelInitialized = true;
 
-    setTimeout(() => {
-      form?.requestSubmit();
-    }, 400);
-  }
+    let fbq = window.fbq;
 
-  return (
-    <button
-      type="submit"
-      onClick={handleClick}
-      disabled={submitting}
-      className="w-full rounded-lg bg-red-600 px-6 py-4 font-black uppercase tracking-wide hover:bg-red-500 disabled:opacity-60"
-    >
-      {submitting ? "Opening Venmo..." : "Continue to Venmo"}
-    </button>
-  );
+    if (!fbq) {
+      fbq = function (...args: unknown[]) {
+        if (fbq?.callMethod) {
+          fbq.callMethod(...args);
+        } else {
+          fbq?.queue.push(args);
+        }
+      } as Fbq;
+
+      fbq.queue = [];
+      fbq.push = fbq;
+      fbq.loaded = true;
+      fbq.version = "2.0";
+
+      window.fbq = fbq;
+      window._fbq = fbq;
+    }
+
+    fbq("init", PIXEL_ID);
+    fbq("track", "PageView");
+
+    if (!document.getElementById("meta-pixel-script")) {
+      const script = document.createElement("script");
+      script.id = "meta-pixel-script";
+      script.async = true;
+      script.src = "https://connect.facebook.net/en_US/fbevents.js";
+      document.head.appendChild(script);
+    }
+
+    console.log(`[Meta] Pixel ${PIXEL_ID} initialized`);
+  }, []);
+
+  return null;
 }

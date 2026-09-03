@@ -2,12 +2,6 @@
 
 import { useState } from "react";
 
-declare global {
-  interface Window {
-    fbq?: (...args: unknown[]) => void;
-  }
-}
-
 export default function MetaCheckoutButton() {
   const [submitting, setSubmitting] = useState(false);
 
@@ -18,13 +12,13 @@ export default function MetaCheckoutButton() {
 
     setSubmitting(true);
 
-    if (typeof window !== "undefined" && typeof window.fbq === "function") {
+    if (typeof window.fbq === "function") {
       window.fbq("track", "InitiateCheckout");
     }
 
     const form = event.currentTarget.form;
 
-    setTimeout(() => {
+    window.setTimeout(() => {
       form?.requestSubmit();
     }, 400);
   }
