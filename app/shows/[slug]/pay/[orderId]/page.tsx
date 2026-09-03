@@ -2,6 +2,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { submitVenmoConfirmation } from "./actions";
+import MetaInitiateCheckout from "./meta-initiate-checkout";
 
 type PageProps = {
   params: Promise<{ slug: string; orderId: string }>;
@@ -35,6 +36,7 @@ export default async function VenmoPayPage({
   return (
     <main className="min-h-screen bg-stone-950 px-6 py-12 text-stone-100">
       <div className="mx-auto max-w-2xl">
+        <MetaInitiateCheckout />
         <p className="text-xs font-black uppercase tracking-[0.3em] text-red-500">
           Pocket Fuzz
         </p>
