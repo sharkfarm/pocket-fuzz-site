@@ -9,7 +9,6 @@ import {
 
 type OrderFilter =
   | "pending"
-  | "submitted"
   | "approved"
   | "declined"
   | "all";
@@ -24,7 +23,6 @@ type PageProps = {
 
 const validFilters: OrderFilter[] = [
   "pending",
-  "submitted",
   "approved",
   "declined",
   "all",
@@ -44,13 +42,13 @@ export default async function VenmoAdminPage({
     redirect("/admin/login");
   }
 
-  const requestedStatus = String(query.status ?? "submitted");
+  const requestedStatus = String(query.status ?? "pending");
 
   const activeFilter: OrderFilter = validFilters.includes(
     requestedStatus as OrderFilter
   )
     ? (requestedStatus as OrderFilter)
-    : "submitted";
+    : "pending";
 
   let ordersQuery = supabase
     .from("venmo_orders")
@@ -108,8 +106,7 @@ export default async function VenmoAdminPage({
         <div className="mt-6 rounded-lg border border-stone-800 bg-stone-900 p-4 text-sm text-stone-400">
           Pending means the checkout was created but payment has not yet been
           verified. Match the order against Venmo by order number, amount,
-          customer name, and time, then click <strong className="text-stone-200">Mark Paid</strong>.
-          Older submitted orders can be verified the same way.
+          customer name, and time, then click <strong className="text-stone-200">Approve</strong>.
         </div>
 
         {query.saved ? (
@@ -205,7 +202,7 @@ export default async function VenmoAdminPage({
                   ))}
                 </div>
 
-                {order.status === "submitted" || order.status === "pending" ? (
+                {order.status === "pending" ? (
                   <div className="mt-6 flex flex-wrap gap-3">
                     <form action={approveVenmoOrder}>
                       <input
@@ -248,7 +245,7 @@ export default async function VenmoAdminPage({
                   </div>
                 ) : null}
 
-                {false ? (
+                {order.status === "approved" || order.status === "declined" ? (
                   <div className="mt-6">
                     <form action={deleteVenmoOrder}>
                       <input
@@ -261,7 +258,7 @@ export default async function VenmoAdminPage({
                         type="submit"
                         className="rounded-lg border border-stone-700 px-5 py-3 font-black uppercase text-stone-300 hover:border-red-700 hover:text-red-300"
                       >
-                        Delete Test Order
+                        Delete Order
                       </button>
                     </form>
                   </div>
@@ -298,8 +295,6 @@ function formatFilterLabel(filter: OrderFilter) {
   switch (filter) {
     case "pending":
       return "Pending";
-    case "submitted":
-      return "Submitted";
     case "approved":
       return "Approved";
     case "declined":
@@ -318,8 +313,6 @@ function getStatusClass(status: string) {
       return `${base} border-emerald-800 bg-emerald-950/40 text-emerald-300`;
     case "declined":
       return `${base} border-red-800 bg-red-950/40 text-red-300`;
-    case "submitted":
-      return `${base} border-amber-800 bg-amber-950/40 text-amber-300`;
     default:
       return `${base} border-stone-700 bg-stone-950 text-stone-300`;
   }

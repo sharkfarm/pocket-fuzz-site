@@ -242,6 +242,23 @@ export default function MerchShop({
                 type="tel"
               />
             </div>
+
+            <label className="mt-5 flex items-start gap-3 rounded-xl border border-stone-800 bg-stone-950 p-4">
+              <input
+                type="checkbox"
+                name="mailing_list_opt_in"
+                defaultChecked
+                className="mt-1 h-4 w-4 accent-red-600"
+              />
+              <span>
+                <span className="block font-bold">
+                  Join the Pocket Fuzz mailing list
+                </span>
+                <span className="mt-1 block text-xs leading-5 text-stone-500">
+                  Get occasional show announcements, tickets, and Pocket Fuzz news.
+                </span>
+              </span>
+            </label>
           </section>
 
           <aside className="rounded-2xl border border-stone-800 bg-stone-900 p-6 lg:sticky lg:top-6 lg:self-start">

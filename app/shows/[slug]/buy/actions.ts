@@ -32,6 +32,8 @@ export async function createVenmoOrder(formData: FormData) {
   const customerName = String(formData.get("customer_name") ?? "").trim();
   const customerEmail = String(formData.get("customer_email") ?? "").trim();
   const customerPhone = String(formData.get("customer_phone") ?? "").trim();
+  const mailingListOptIn =
+    formData.get("mailing_list_opt_in") === "on";
 
   if (!showId || !slug || !customerName || !customerEmail) {
     redirect(`/shows/${slug}?error=${encodeURIComponent("Name and email are required.")}`);
@@ -171,6 +173,13 @@ export async function createVenmoOrder(formData: FormData) {
     redirect(`/shows/${slug}?error=${encodeURIComponent(itemError.message)}`);
   }
 
+  await syncPurchaserContact({
+    name: customerName,
+    email: customerEmail,
+    phone: customerPhone,
+    subscribe: mailingListOptIn,
+  });
+
   const note = `${orderNumber} - ${items
     .map((item) => `${item.quantity} ${item.item_name}`)
     .join(", ")}`;
@@ -183,4 +192,49 @@ export async function createVenmoOrder(formData: FormData) {
   redirect(
     `/shows/${slug}/pay/${order.id}?venmo=${encodeURIComponent(venmoUrl)}`
   );
+}
+
+
+async function syncPurchaserContact({
+  name,
+  email,
+  phone,
+  subscribe,
+}: {
+  name: string;
+  email: string;
+  phone?: string;
+  subscribe: boolean;
+}) {
+  const endpoint = process.env.PFCOM_PURCHASE_CONTACT_URL;
+  const secret = process.env.PFCOM_PURCHASE_CONTACT_SECRET;
+
+  if (!endpoint || !secret) {
+    console.error("[PF-Com] Purchase contact sync is not configured.");
+    return;
+  }
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-pocket-fuzz-secret": secret,
+      },
+      body: JSON.stringify({
+        name,
+        email,
+        phone: phone || null,
+        subscribe,
+      }),
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      console.error("[PF-Com] Purchase contact sync failed:", response.status, await response.text());
+    }
+  } catch (error) {
+    // Contact sync must never block a customer purchase.
+    console.error("[PF-Com] Purchase contact sync error:", error);
+  }
 }

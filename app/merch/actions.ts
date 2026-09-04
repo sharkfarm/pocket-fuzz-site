@@ -49,6 +49,9 @@ export async function createMerchOrder(formData: FormData) {
     formData.get("customer_phone") ?? ""
   ).trim();
 
+  const mailingListOptIn =
+    formData.get("mailing_list_opt_in") === "on";
+
   if (!customerName || !customerEmail) {
     redirect(
       `/merch?error=${encodeURIComponent(
@@ -198,6 +201,13 @@ export async function createMerchOrder(formData: FormData) {
     );
   }
 
+  await syncPurchaserContact({
+    name: customerName,
+    email: customerEmail,
+    phone: customerPhone,
+    subscribe: mailingListOptIn,
+  });
+
   const note = `${orderNumber} - ${items
     .map(
       (item) =>
@@ -215,4 +225,49 @@ export async function createMerchOrder(formData: FormData) {
   redirect(
     `/merch/pay/${order.id}?venmo=${encodeURIComponent(venmoUrl)}`
   );
+}
+
+
+async function syncPurchaserContact({
+  name,
+  email,
+  phone,
+  subscribe,
+}: {
+  name: string;
+  email: string;
+  phone?: string;
+  subscribe: boolean;
+}) {
+  const endpoint = process.env.PFCOM_PURCHASE_CONTACT_URL;
+  const secret = process.env.PFCOM_PURCHASE_CONTACT_SECRET;
+
+  if (!endpoint || !secret) {
+    console.error("[PF-Com] Purchase contact sync is not configured.");
+    return;
+  }
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-pocket-fuzz-secret": secret,
+      },
+      body: JSON.stringify({
+        name,
+        email,
+        phone: phone || null,
+        subscribe,
+      }),
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      console.error("[PF-Com] Purchase contact sync failed:", response.status, await response.text());
+    }
+  } catch (error) {
+    // Contact sync must never block a customer purchase.
+    console.error("[PF-Com] Purchase contact sync error:", error);
+  }
 }
