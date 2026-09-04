@@ -4,6 +4,252 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Resend } from "resend";
+import { formatOrderNumber } from "@/lib/venmo";
+
+
+export async function createManualVenmoOrder(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) redirect("/admin/login");
+
+  const customerName = String(formData.get("customer_name") ?? "").trim();
+  const customerEmail = String(formData.get("customer_email") ?? "").trim().toLowerCase();
+  const customerPhone = String(formData.get("customer_phone") ?? "").trim();
+  const venmoUsername = String(formData.get("venmo_username") ?? "")
+    .trim()
+    .replace(/^@+/, "");
+  const mailingListOptIn = formData.get("mailing_list_opt_in") === "on";
+
+  if (!customerName || !customerEmail) {
+    redirect("/admin/venmo?error=Name%20and%20email%20are%20required");
+  }
+
+  const itemRequests: Array<{
+    kind: "ticket" | "merch";
+    id: string;
+    quantity: number;
+    option: string | null;
+  }> = [];
+
+  for (let index = 0; index < 5; index += 1) {
+    const raw = String(formData.get(`manual_item_${index}`) ?? "").trim();
+    const quantity = Number(formData.get(`manual_qty_${index}`) ?? 0);
+    const option = String(formData.get(`manual_option_${index}`) ?? "").trim() || null;
+
+    if (!raw || !Number.isInteger(quantity) || quantity <= 0) continue;
+
+    const [kind, id] = raw.split(":");
+    if ((kind === "ticket" || kind === "merch") && id) {
+      itemRequests.push({
+        kind,
+        id,
+        quantity: Math.min(quantity, 20),
+        option,
+      });
+    }
+  }
+
+  if (itemRequests.length === 0) {
+    redirect("/admin/venmo?error=Add%20at%20least%20one%20item");
+  }
+
+  const ticketIds = itemRequests
+    .filter((item) => item.kind === "ticket")
+    .map((item) => item.id);
+
+  const merchIds = itemRequests
+    .filter((item) => item.kind === "merch")
+    .map((item) => item.id);
+
+  const ticketMap = new Map<string, any>();
+  const merchMap = new Map<string, any>();
+
+  if (ticketIds.length > 0) {
+    const { data, error } = await supabase
+      .from("ticket_sales")
+      .select("id,show_id,ticket_type,ticket_price")
+      .in("id", ticketIds);
+
+    if (error) redirect(`/admin/venmo?error=${encodeURIComponent(error.message)}`);
+    for (const row of data ?? []) ticketMap.set(row.id, row);
+  }
+
+  if (merchIds.length > 0) {
+    const { data, error } = await supabase
+      .from("merch_products")
+      .select("id,name,price,unit_cost")
+      .in("id", merchIds);
+
+    if (error) redirect(`/admin/venmo?error=${encodeURIComponent(error.message)}`);
+    for (const row of data ?? []) merchMap.set(row.id, row);
+  }
+
+  const items: Array<{
+    item_kind: "ticket" | "merch";
+    ticket_sale_id: string | null;
+    merch_product_id: string | null;
+    item_name: string;
+    item_option: string | null;
+    unit_price: number;
+    unit_cost: number;
+    quantity: number;
+  }> = [];
+
+  let showId: string | null = null;
+
+  for (const request of itemRequests) {
+    if (request.kind === "ticket") {
+      const ticket = ticketMap.get(request.id);
+      if (!ticket) continue;
+
+      if (showId && showId !== ticket.show_id) {
+        redirect("/admin/venmo?error=Manual%20ticket%20items%20must%20be%20for%20the%20same%20show");
+      }
+
+      showId = ticket.show_id;
+
+      items.push({
+        item_kind: "ticket",
+        ticket_sale_id: ticket.id,
+        merch_product_id: null,
+        item_name: ticket.ticket_type,
+        item_option: null,
+        unit_price: Number(ticket.ticket_price),
+        unit_cost: 0,
+        quantity: request.quantity,
+      });
+    } else {
+      const merch = merchMap.get(request.id);
+      if (!merch) continue;
+
+      items.push({
+        item_kind: "merch",
+        ticket_sale_id: null,
+        merch_product_id: merch.id,
+        item_name: merch.name,
+        item_option: request.option,
+        unit_price: Number(merch.price),
+        unit_cost: Number(merch.unit_cost ?? 0),
+        quantity: request.quantity,
+      });
+    }
+  }
+
+  if (items.length === 0) {
+    redirect("/admin/venmo?error=Could%20not%20resolve%20the%20selected%20items");
+  }
+
+  const expectedAmount = items.reduce(
+    (sum, item) => sum + item.unit_price * item.quantity,
+    0
+  );
+
+  const temporaryNumber = `TEMP-${crypto.randomUUID()}`;
+
+  const { data: order, error: orderError } = await supabase
+    .from("venmo_orders")
+    .insert({
+      order_number: temporaryNumber,
+      show_id: showId,
+      customer_name: customerName,
+      customer_email: customerEmail,
+      customer_phone: customerPhone || null,
+      venmo_username: venmoUsername || null,
+      expected_amount: expectedAmount,
+      service_fee: 0,
+      status: "pending",
+    })
+    .select("id")
+    .single();
+
+  if (orderError || !order) {
+    redirect(`/admin/venmo?error=${encodeURIComponent(orderError?.message ?? "Could not create manual order.")}`);
+  }
+
+  const orderNumber = formatOrderNumber(order.id);
+
+  const { error: numberError } = await supabase
+    .from("venmo_orders")
+    .update({ order_number: orderNumber })
+    .eq("id", order.id);
+
+  if (numberError) {
+    await supabase.from("venmo_orders").delete().eq("id", order.id);
+    redirect(`/admin/venmo?error=${encodeURIComponent(numberError.message)}`);
+  }
+
+  const { error: itemError } = await supabase
+    .from("venmo_order_items")
+    .insert(
+      items.map((item) => ({
+        order_id: order.id,
+        ...item,
+      }))
+    );
+
+  if (itemError) {
+    await supabase.from("venmo_orders").delete().eq("id", order.id);
+    redirect(`/admin/venmo?error=${encodeURIComponent(itemError.message)}`);
+  }
+
+  await syncPurchaserContact({
+    name: customerName,
+    email: customerEmail,
+    phone: customerPhone,
+    subscribe: mailingListOptIn,
+  });
+
+  revalidatePath("/admin/venmo");
+  redirect("/admin/venmo?status=pending&saved=manual");
+}
+
+async function syncPurchaserContact({
+  name,
+  email,
+  phone,
+  subscribe,
+}: {
+  name: string;
+  email: string;
+  phone?: string;
+  subscribe: boolean;
+}) {
+  const endpoint = process.env.PFCOM_PURCHASE_CONTACT_URL;
+  const secret = process.env.PFCOM_PURCHASE_CONTACT_SECRET;
+
+  if (!endpoint || !secret) {
+    console.error("[PF-Com] Purchase contact sync is not configured.");
+    return;
+  }
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-pocket-fuzz-secret": secret,
+      },
+      body: JSON.stringify({
+        name,
+        email,
+        phone: phone || null,
+        subscribe,
+      }),
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      console.error(
+        "[PF-Com] Purchase contact sync failed:",
+        response.status,
+        await response.text()
+      );
+    }
+  } catch (error) {
+    console.error("[PF-Com] Purchase contact sync error:", error);
+  }
+}
 
 export async function approveVenmoOrder(formData: FormData) {
   const supabase = await createClient();
