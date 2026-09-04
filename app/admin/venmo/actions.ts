@@ -6,6 +6,22 @@ import { createClient } from "@/lib/supabase/server";
 import { Resend } from "resend";
 import { formatOrderNumber } from "@/lib/venmo";
 
+const VENMO_FEE_RATE = 0.019;
+const VENMO_FIXED_FEE = 0.10;
+
+function calculateVenmoServiceFee(subtotal: number) {
+  if (subtotal <= 0) return 0;
+
+  const totalWithFee =
+    (subtotal + VENMO_FIXED_FEE) / (1 - VENMO_FEE_RATE);
+
+  return Math.max(
+    0,
+    Math.round((totalWithFee - subtotal) * 100) / 100
+  );
+}
+
+
 
 export async function createManualVenmoOrder(formData: FormData) {
   const supabase = await createClient();
@@ -20,6 +36,7 @@ export async function createManualVenmoOrder(formData: FormData) {
     .trim()
     .replace(/^@+/, "");
   const mailingListOptIn = formData.get("mailing_list_opt_in") === "on";
+  const addVenmoFee = formData.get("add_venmo_fee") === "on";
 
   if (!customerName || !customerEmail) {
     redirect("/admin/venmo?error=Name%20and%20email%20are%20required");
@@ -140,10 +157,16 @@ export async function createManualVenmoOrder(formData: FormData) {
     redirect("/admin/venmo?error=Could%20not%20resolve%20the%20selected%20items");
   }
 
-  const expectedAmount = items.reduce(
+  const subtotal = items.reduce(
     (sum, item) => sum + item.unit_price * item.quantity,
     0
   );
+
+  const serviceFee = addVenmoFee
+    ? calculateVenmoServiceFee(subtotal)
+    : 0;
+
+  const expectedAmount = subtotal + serviceFee;
 
   const temporaryNumber = `TEMP-${crypto.randomUUID()}`;
 
@@ -157,7 +180,7 @@ export async function createManualVenmoOrder(formData: FormData) {
       customer_phone: customerPhone || null,
       venmo_username: venmoUsername || null,
       expected_amount: expectedAmount,
-      service_fee: 0,
+      service_fee: serviceFee,
       status: "pending",
     })
     .select("id")

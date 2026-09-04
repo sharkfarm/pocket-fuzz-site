@@ -178,6 +178,20 @@ export default async function VenmoAdminPage({
               </span>
             </label>
 
+            <label className="mt-4 flex items-start gap-3 rounded-xl border border-stone-800 bg-stone-950 p-4">
+              <input
+                type="checkbox"
+                name="add_venmo_fee"
+                className="mt-1 h-4 w-4 accent-red-600"
+              />
+              <span>
+                <span className="block font-bold">Add Venmo service fee</span>
+                <span className="mt-1 block text-xs text-stone-500">
+                  Adds the same Venmo fee used by the website checkout to the manual order total.
+                </span>
+              </span>
+            </label>
+
             <div className="mt-6">
               <p className="text-xs font-black uppercase tracking-[0.2em] text-stone-500">
                 Items
