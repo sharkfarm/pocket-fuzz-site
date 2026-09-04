@@ -6,10 +6,12 @@ import {
   declineVenmoOrder,
   deleteVenmoOrder,
   createManualVenmoOrder,
+  sendVenmoReceipt,
 } from "./actions";
 
 type OrderFilter =
   | "pending"
+  | "submitted"
   | "approved"
   | "declined"
   | "all";
@@ -24,6 +26,7 @@ type PageProps = {
 
 const validFilters: OrderFilter[] = [
   "pending",
+  "submitted",
   "approved",
   "declined",
   "all",
@@ -345,7 +348,7 @@ export default async function VenmoAdminPage({
                   ))}
                 </div>
 
-                {order.status === "pending" ? (
+                {order.status === "pending" || order.status === "submitted" ? (
                   <div className="mt-6 flex flex-wrap gap-3">
                     <form action={approveVenmoOrder}>
                       <input
@@ -383,6 +386,20 @@ export default async function VenmoAdminPage({
                         className="rounded-lg border border-stone-700 px-5 py-3 font-black uppercase text-stone-300 hover:border-red-700 hover:text-red-300"
                       >
                         Delete Test Order
+                      </button>
+                    </form>
+                  </div>
+                ) : null}
+
+                {order.status === "approved" ? (
+                  <div className="mt-6">
+                    <form action={sendVenmoReceipt}>
+                      <input type="hidden" name="order_id" value={order.id} />
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-emerald-700 px-5 py-3 font-black uppercase text-emerald-300 hover:bg-emerald-950"
+                      >
+                        Send Receipt Email
                       </button>
                     </form>
                   </div>
@@ -431,6 +448,8 @@ function getSavedMessage(saved: string) {
       return "Venmo order deleted.";
     case "manual":
       return "Manual order created. Review it below, then click Approve.";
+    case "receipt":
+      return "Receipt email sent.";
     default:
       return `Order ${saved}.`;
   }
@@ -440,6 +459,8 @@ function formatFilterLabel(filter: OrderFilter) {
   switch (filter) {
     case "pending":
       return "Pending";
+    case "submitted":
+      return "Submitted";
     case "approved":
       return "Approved";
     case "declined":
@@ -454,6 +475,8 @@ function getStatusClass(status: string) {
     "mt-2 inline-block rounded-full border px-3 py-1 text-xs font-bold uppercase";
 
   switch (status) {
+    case "submitted":
+      return `${base} border-amber-800 bg-amber-950/40 text-amber-300`;
     case "approved":
       return `${base} border-emerald-800 bg-emerald-950/40 text-emerald-300`;
     case "declined":
