@@ -65,6 +65,8 @@ export default async function VenmoAdminPage({
       expected_amount,
       status,
       submitted_at,
+      receipt_sent_at,
+      receipt_sent_to,
       created_at,
       shows (
         show_name,
@@ -393,13 +395,29 @@ export default async function VenmoAdminPage({
 
                 {order.status === "approved" ? (
                   <div className="mt-6">
+                    {order.receipt_sent_at ? (
+                      <div className="mb-4 rounded-xl border border-emerald-900 bg-emerald-950/30 p-4 text-sm text-emerald-200">
+                        <p className="font-black uppercase">Receipt sent</p>
+                        <p className="mt-1 text-emerald-300/80">
+                          {formatDateTime(order.receipt_sent_at)}
+                          {order.receipt_sent_to ? ` → ${order.receipt_sent_to}` : ""}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="mb-4 rounded-xl border border-amber-900 bg-amber-950/30 p-4 text-sm text-amber-200">
+                        Receipt email has not been recorded as sent.
+                      </div>
+                    )}
+
                     <form action={sendVenmoReceipt}>
                       <input type="hidden" name="order_id" value={order.id} />
                       <button
                         type="submit"
                         className="rounded-lg border border-emerald-700 px-5 py-3 font-black uppercase text-emerald-300 hover:bg-emerald-950"
                       >
-                        Send Receipt Email
+                        {order.receipt_sent_at
+                          ? "Resend Receipt Email"
+                          : "Send Receipt Email"}
                       </button>
                     </form>
                   </div>
@@ -512,6 +530,16 @@ function AdminField({
       />
     </label>
   );
+}
+
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
 }
 
 function formatCurrency(value: number) {

@@ -290,7 +290,7 @@ export async function sendVenmoReceipt(formData: FormData) {
     .from("venmo_orders")
     .select(`
       id, order_number, customer_name, customer_email,
-      expected_amount, service_fee, status,
+      expected_amount, service_fee, status, receipt_sent_at, receipt_sent_to,
       shows(show_name,show_date,start_time,venues(name,city,state)),
       venmo_order_items(item_kind,item_name,item_option,quantity,unit_price,line_total)
     `)
@@ -330,6 +330,18 @@ export async function sendVenmoReceipt(formData: FormData) {
 
   if (emailError) {
     redirect(`/admin/venmo?error=${encodeURIComponent(emailError.message)}`);
+  }
+
+  const { error: receiptUpdateError } = await supabase
+    .from("venmo_orders")
+    .update({
+      receipt_sent_at: new Date().toISOString(),
+      receipt_sent_to: order.customer_email,
+    })
+    .eq("id", order.id);
+
+  if (receiptUpdateError) {
+    console.error("RECEIPT STATUS UPDATE ERROR:", receiptUpdateError);
   }
 
   revalidatePath("/admin/venmo");
@@ -390,7 +402,21 @@ export async function approveVenmoOrder(formData: FormData) {
       },
       { idempotencyKey: `venmo-receipt/${order.id}` }
     );
-    if (emailError) console.error("[Receipt] Send failed:", emailError);
+    if (emailError) {
+      console.error("[Receipt] Send failed:", emailError);
+    } else {
+      const { error: receiptUpdateError } = await supabase
+        .from("venmo_orders")
+        .update({
+          receipt_sent_at: new Date().toISOString(),
+          receipt_sent_to: order.customer_email,
+        })
+        .eq("id", order.id);
+
+      if (receiptUpdateError) {
+        console.error("[Receipt] Status update failed:", receiptUpdateError);
+      }
+    }
   } else if (!process.env.RESEND_API_KEY) {
     console.error("[Receipt] RESEND_API_KEY is not configured.");
   }
