@@ -114,7 +114,7 @@ export default function HomeClient({
 
   const gallery: string[] = [
     "/images/PF_Globe1.jpg",
-    "/images/PF_PROMO3.jpg",
+    "/images/moesDrums.jpg",
     "/images/PF_Globe2.jpg",
     "/images/Brandon1.png",
     "/images/Ricky1.png",
@@ -202,7 +202,7 @@ export default function HomeClient({
           <div className="relative">
             <div className="absolute -left-4 -top-4 h-full w-full border border-red-700/50" />
             <img
-              src="/images/PocketFuzz1.png"
+              src="/images/PF_Globe1.jpg"
               alt="Pocket Fuzz live"
               className="relative h-[460px] w-full border border-stone-800 object-cover"
             />
