@@ -1,3 +1,4 @@
+import { mountainDateTimeInput } from "@/lib/ticket-sales";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -148,6 +149,7 @@ export default async function ShowDetailPage({
           flyer_url,
           featured,
           ticket_sales_status,
+          ticket_sales_cutoff,
 
           venues (
             name
@@ -799,6 +801,11 @@ export default async function ShowDetailPage({
                   ) : null}
                 </div>
 
+<label className="block">
+  <span className="mb-2 block text-sm font-semibold">Online ticket sales cutoff (Mountain Time)</span>
+  <input type="datetime-local" name="ticket_sales_cutoff" defaultValue={mountainDateTimeInput(showDetails.ticket_sales_cutoff)} className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3" />
+  <span className="mt-2 block text-xs text-stone-400">Optional. Leave blank for no cutoff. Uses Denver time (MST/MDT). Repeated or skipped daylight saving times are rejected.</span>
+</label>
                 <label className="block">
                   <span className="mb-2 block text-sm font-semibold">
                     Ticket Sales Status

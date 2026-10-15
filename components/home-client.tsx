@@ -43,7 +43,6 @@ export default function HomeClient({
 }: {
   upcomingShows: PublicHomeShow[];
 }) {
-  console.log("HOMECLIENT SHOWS:", upcomingShows);
   const band = {
     name: "Pocket Fuzz",
     tagline: "Fuzzed-out riffs. Big drums. No wasted motion.",
@@ -124,7 +123,7 @@ export default function HomeClient({
   return (
     <div className="min-h-screen bg-[#0a0908] text-stone-100">
       <header className="border-b border-stone-800 bg-[#0a0908]">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6">
           <div>
             <div className="text-2xl font-black uppercase tracking-[0.25em]">
               {band.name}
@@ -133,7 +132,7 @@ export default function HomeClient({
               {band.genre}
             </div>
           </div>
-          <nav className="hidden gap-6 text-sm uppercase tracking-widest md:flex">
+          <nav className="hidden gap-4 text-sm uppercase tracking-widest lg:flex">
             <a href="#about" className="text-stone-400 hover:text-white">
               About
             </a>
@@ -153,11 +152,22 @@ export default function HomeClient({
               Contact
             </a>
           </nav>
+          <details className="w-full lg:hidden">
+            <summary className="min-h-11 cursor-pointer rounded-lg border border-stone-700 px-4 py-3 font-bold">Menu</summary>
+            <nav aria-label="Mobile navigation" className="mt-2 grid grid-cols-2 gap-2 rounded-lg border border-stone-800 p-2">
+              <a href="#about" className="rounded px-3 py-3">About</a>
+              <Link href="/shows" className="rounded px-3 py-3">Shows</Link>
+              <Link href="/merch" className="rounded px-3 py-3">Merch</Link>
+              <a href="#music" className="rounded px-3 py-3">Music</a>
+              <a href="#gallery" className="rounded px-3 py-3">Photos</a>
+              <a href="#contact" className="rounded px-3 py-3">Contact</a>
+            </nav>
+          </details>
         </div>
       </header>
 
       <section className="border-b border-stone-900">
-        <div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 md:grid-cols-2 md:items-center md:py-24">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-10 sm:px-6 sm:py-16 md:grid-cols-2 md:items-center md:py-24">
 	<div>
             <p className="mb-4 text-xs font-bold uppercase tracking-[0.35em] text-red-500">
               Denver Garage Rock
@@ -168,7 +178,9 @@ export default function HomeClient({
 		  alt="Pocket Fuzz"
 		  width={200}
 		  height={60}
-		  className="h-100 w-auto"
+		  className="h-auto w-full max-w-sm object-contain"
+          sizes="(max-width: 768px) 90vw, 384px"
+          priority
 	      />
             </h1>
             <p className="mt-6 max-w-xl text-xl font-semibold text-stone-300">
@@ -204,19 +216,19 @@ export default function HomeClient({
             <img
               src="/images/PF_Globe1.jpg"
               alt="Pocket Fuzz live"
-              className="relative h-[460px] w-full border border-stone-800 object-cover"
+              className="relative h-64 w-full sm:h-96 lg:h-[460px] border border-stone-800 object-cover"
             />
           </div>
         </div>
       </section>
 
-      <section id="about" className="mx-auto max-w-7xl px-6 py-16">
+      <section id="about" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16">
         <div className="grid gap-8 md:grid-cols-[1fr_2fr]">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
               About
             </p>
-            <h2 className="mt-4 text-4xl font-black uppercase">Built Loud.</h2>
+            <h2 className="mt-4 text-3xl font-black uppercase sm:text-4xl">Built Loud.</h2>
           </div>
           <div className="border-l-4 border-red-600 pl-6 text-lg leading-9 text-stone-300">
             Pocket Fuzz plays lean, dirty, riff-heavy rock with zero extra
@@ -228,7 +240,7 @@ export default function HomeClient({
         </div>
       </section>
 
-      <section id="shows" className="bg-[#11100f] px-6 py-16">
+      <section id="shows" className="bg-[#11100f] px-4 py-10 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -236,7 +248,7 @@ export default function HomeClient({
                 Shows
               </p>
 
-              <h2 className="mt-4 text-4xl font-black uppercase">
+              <h2 className="mt-4 text-3xl font-black uppercase sm:text-4xl">
                 Upcoming Dates
               </h2>
             </div>
@@ -264,9 +276,9 @@ export default function HomeClient({
               return (
                <article
                     key={show.id}
-                  className="grid gap-5 border border-stone-800 bg-black/30 p-6 md:grid-cols-[220px_1fr_auto] md:items-center"
+                  className="grid gap-5 border border-stone-800 bg-black/30 p-6 lg:grid-cols-[220px_minmax(0,1fr)_auto] lg:items-center"
                 >
-                  <div className="whitespace-nowrap text-sm font-black uppercase tracking-[0.2em] text-red-500">
+                  <div className="text-sm font-black uppercase tracking-[0.2em] text-red-500">
                     {formatShowDate(show.show_date)}
                  </div>
 
@@ -325,18 +337,18 @@ export default function HomeClient({
         </div>
       </section>
 
-      <section id="music" className="mx-auto max-w-7xl px-6 py-16">
+      <section id="music" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16">
         <div className="grid gap-8 md:grid-cols-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
               Music
             </p>
-            <h2 className="mt-4 text-4xl font-black uppercase">Tracks</h2>
+            <h2 className="mt-4 text-3xl font-black uppercase sm:text-4xl">Tracks</h2>
             <div className="mt-8 border-t border-stone-800">
               {tracks.map((track, index) => (
                 <div
                   key={track.title}
-                  className="grid grid-cols-[60px_1fr_auto] items-center border-b border-stone-800 py-5"
+                  className="grid grid-cols-[32px_minmax(0,1fr)_auto] gap-3 sm:grid-cols-[60px_minmax(0,1fr)_auto] items-center border-b border-stone-800 py-5"
                 >
                   <div className="text-sm font-black text-stone-500">
                     {String(index + 1).padStart(2, "0")}
@@ -377,7 +389,7 @@ export default function HomeClient({
             </div>
           </div>
 
-          <div className="border border-stone-800 bg-[#11100f] p-8">
+          <div className="border border-stone-800 bg-[#11100f] p-5 sm:p-8">
             <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
               Featured Video
             </p>
@@ -403,12 +415,12 @@ export default function HomeClient({
         </div>
       </section>
 
-      <section id="gallery" className="bg-[#11100f] px-6 py-16">
+      <section id="gallery" className="bg-[#11100f] px-4 py-10 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-7xl">
           <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
             Photos
           </p>
-          <h2 className="mt-4 text-4xl font-black uppercase">
+          <h2 className="mt-4 text-3xl font-black uppercase sm:text-4xl">
             Live / Loud / Dirty
           </h2>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -417,20 +429,21 @@ export default function HomeClient({
                 key={image}
                 src={image}
                 alt={`Pocket Fuzz photo ${index + 1}`}
-                className="h-80 w-full border border-stone-800 object-cover"
+                loading="lazy"
+                className="h-64 w-full sm:h-80 border border-stone-800 object-cover"
               />
             ))}
           </div>
         </div>
       </section>
 
-	<section id="upload" className="mx-auto max-w-7xl px-6 py-16">
-	  <div className="border border-stone-800 bg-[#11100f] p-8 text-center">
+	<section id="upload" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16">
+	  <div className="border border-stone-800 bg-[#11100f] p-5 sm:p-8 text-center">
 	    <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
 	      Share Your Shots
 	    </p>
 
-	    <h2 className="mt-4 text-4xl font-black uppercase">
+	    <h2 className="mt-4 text-3xl font-black uppercase sm:text-4xl">
 	      Upload Photos & Videos
 	    </h2>
 
@@ -461,13 +474,13 @@ export default function HomeClient({
 	  </div>
 	</section>
 
-      <section id="contact" className="mx-auto max-w-7xl px-6 py-16">
+      <section id="contact" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16">
         <div className="grid gap-8 md:grid-cols-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.35em] text-stone-500">
               Contact
             </p>
-            <h2 className="mt-4 text-4xl font-black uppercase">Booking</h2>
+            <h2 className="mt-4 text-3xl font-black uppercase sm:text-4xl">Booking</h2>
             <div className="mt-6 space-y-4 text-lg text-stone-300">
               <p>
                 <a
@@ -482,7 +495,7 @@ export default function HomeClient({
         </div>
       </section>
 
-      <footer className="border-t border-stone-900 px-6 py-8">
+      <footer className="border-t border-stone-900 px-4 py-8 sm:px-6">
        <div className="mx-auto flex max-w-7xl flex-col items-center gap-6">
        <div className="flex items-center justify-center gap-10">
            <a

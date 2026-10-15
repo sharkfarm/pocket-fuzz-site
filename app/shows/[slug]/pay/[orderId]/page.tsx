@@ -1,3 +1,8 @@
+import TicketSalesWindow from "@/components/ticket-sales-window";
+import { ticketSalesClosed } from "@/lib/ticket-sales";
+
+export const dynamic = "force-dynamic";
+
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -22,6 +27,7 @@ export default async function VenmoPayPage({
     .select(`
       id,
       order_number,
+      show_id,
       expected_amount,
       service_fee,
       customer_name,
@@ -32,17 +38,25 @@ export default async function VenmoPayPage({
     .maybeSingle();
 
   if (!order) notFound();
+  const { data: show, error: showError } = await supabase
+    .from("shows")
+    .select("ticket_sales_cutoff")
+    .eq("id", order.show_id)
+    .eq("public_slug", slug)
+    .maybeSingle();
+  if (showError) throw new Error(showError.message);
+  if (!show) notFound();
 
   return (
-    <main className="min-h-screen bg-stone-950 px-6 py-12 text-stone-100">
+    <main className="min-h-screen bg-stone-950 px-4 py-8 sm:px-6 sm:py-12 text-stone-100">
       <div className="mx-auto max-w-2xl">
         <MetaInitiateCheckout />
         <p className="text-xs font-black uppercase tracking-[0.3em] text-red-500">
           Pocket Fuzz
         </p>
-        <h1 className="mt-3 text-4xl font-black uppercase">Pay with Venmo</h1>
+        <h1 className="mt-3 text-3xl font-black uppercase sm:text-4xl">Pay with Venmo</h1>
 
-        <div className="mt-8 rounded-2xl border border-stone-800 bg-stone-900 p-6">
+        <div className="mt-8 rounded-2xl border border-stone-800 bg-stone-900 p-4 sm:p-6">
           <p className="text-sm text-stone-400">Order</p>
           <p className="text-2xl font-black">{order.order_number}</p>
 
@@ -50,7 +64,7 @@ export default async function VenmoPayPage({
             {(order.venmo_order_items ?? []).map((item, index) => (
               <div
                 key={`${item.item_name}-${index}`}
-                className="flex justify-between border-b border-stone-800 pb-3"
+                className="flex justify-between gap-4 border-b border-stone-800 pb-3"
               >
                 <span>
                   {item.quantity} × {item.item_name}
@@ -87,6 +101,7 @@ export default async function VenmoPayPage({
           </div>
         </div>
 
+        <TicketSalesWindow cutoff={show.ticket_sales_cutoff} initiallyClosed={ticketSalesClosed(show.ticket_sales_cutoff)}>
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           <div className="rounded-2xl bg-white p-4">
             <Image
@@ -118,6 +133,8 @@ export default async function VenmoPayPage({
           </div>
         </div>
 
+        </TicketSalesWindow>
+        <p className="mt-6 text-sm text-stone-400">Already paid? Submit your Venmo username below so we can verify your payment, even if online sales have closed.</p>
         {query.error ? (
           <div className="mt-8 rounded-lg border border-red-900 bg-red-950/50 p-4 text-red-200">
             {query.error}
@@ -126,7 +143,7 @@ export default async function VenmoPayPage({
 
         <form
           action={submitVenmoConfirmation}
-          className="mt-8 rounded-2xl border border-stone-800 bg-stone-900 p-6"
+          className="mt-8 rounded-2xl border border-stone-800 bg-stone-900 p-4 sm:p-6"
         >
           <input type="hidden" name="order_id" value={orderId} />
           <input type="hidden" name="slug" value={slug} />

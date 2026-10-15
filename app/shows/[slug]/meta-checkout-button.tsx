@@ -9,14 +9,14 @@ export default function MetaCheckoutButton() {
     event.preventDefault();
 
     if (submitting) return;
+    const form = event.currentTarget.form;
+    if (!form || !form.reportValidity()) return;
 
     setSubmitting(true);
 
     if (typeof window.fbq === "function") {
       window.fbq("track", "InitiateCheckout");
     }
-
-    const form = event.currentTarget.form;
 
     window.setTimeout(() => {
       form?.requestSubmit();

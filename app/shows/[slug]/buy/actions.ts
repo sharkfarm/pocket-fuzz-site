@@ -1,5 +1,7 @@
 "use server";
 
+import { ticketSalesClosed } from "@/lib/ticket-sales";
+
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { buildVenmoPaymentUrl, formatOrderNumber } from "@/lib/venmo";
@@ -39,10 +41,23 @@ export async function createVenmoOrder(formData: FormData) {
     redirect(`/shows/${slug}?error=${encodeURIComponent("Name and email are required.")}`);
   }
 
+  const { data: show, error: showError } = await supabase
+    .from("shows")
+    .select("id,ticket_sales_status,ticket_sales_cutoff,status")
+    .eq("id", showId)
+    .eq("public_slug", slug)
+    .eq("is_public", true)
+    .maybeSingle();
+  if (showError) throw new Error(showError.message);
+  if (!show || show.ticket_sales_status !== "on_sale" || ["cancelled", "completed"].includes(show.status) || ticketSalesClosed(show.ticket_sales_cutoff)) {
+    redirect("/shows/" + encodeURIComponent(slug) + "?error=" + encodeURIComponent("Online Ticket Sales Closed"));
+  }
+
   const { data: ticketRows, error: ticketError } = await supabase
     .from("ticket_sales")
     .select("id,ticket_type,ticket_price,venmo_service_fee")
-    .eq("show_id", showId);
+    .eq("show_id", showId)
+    .or("ticket_mode.is.null,ticket_mode.neq.external");
 
   if (ticketError) {
     redirect(`/shows/${slug}?error=${encodeURIComponent(ticketError.message)}`);
@@ -123,6 +138,10 @@ export async function createVenmoOrder(formData: FormData) {
 
   const expectedAmount = subtotal + serviceFee;
 
+  // Recheck after catalog lookups; the database trigger guards insertion too.
+  if (ticketSalesClosed(show.ticket_sales_cutoff)) {
+    redirect("/shows/" + encodeURIComponent(slug) + "?error=" + encodeURIComponent("Online Ticket Sales Closed"));
+  }
   const temporaryNumber = `TEMP-${crypto.randomUUID()}`;
 
   const { data: order, error: orderError } = await supabase

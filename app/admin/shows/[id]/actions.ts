@@ -1,5 +1,7 @@
 "use server";
 
+import { parseMountainCutoff } from "@/lib/ticket-sales";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -633,6 +635,12 @@ export async function updateShowDetails(formData: FormData) {
   const venueName = String(formData.get("venue_name") ?? "").trim();
   const showName = String(formData.get("show_name") ?? "").trim();
   const showDate = String(formData.get("show_date") ?? "");
+  let ticketSalesCutoff: string | null;
+  try {
+    ticketSalesCutoff = parseMountainCutoff(formData.get("ticket_sales_cutoff"));
+  } catch (error) {
+    redirect("/admin/shows/" + showId + "?error=" + encodeURIComponent(error instanceof Error ? error.message : "Invalid cutoff."));
+  }
 
   const capacity = Number(formData.get("capacity") ?? 300);
   const ticketGoal = Number(formData.get("ticket_goal") ?? 50);
@@ -819,6 +827,7 @@ export async function updateShowDetails(formData: FormData) {
       show_name: showName || `${venueName} Show`,
       venue_id: venueId,
       show_date: showDate,
+      ticket_sales_cutoff: ticketSalesCutoff,
       capacity,
       ticket_goal: ticketGoal,
       number_of_acts: numberOfActs,

@@ -1,3 +1,8 @@
+import TicketSalesWindow from "@/components/ticket-sales-window";
+import { ticketSalesClosed } from "@/lib/ticket-sales";
+
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -22,6 +27,7 @@ export default async function BuyTicketsPage({ params, searchParams }: PageProps
       start_time,
       public_slug,
       ticket_sales_status,
+      ticket_sales_cutoff,
       venues(name)
     `)
     .eq("public_slug", slug)
@@ -39,6 +45,7 @@ export default async function BuyTicketsPage({ params, searchParams }: PageProps
     .from("ticket_sales")
     .select("id,ticket_type,ticket_price,channel")
     .eq("show_id", show.id)
+    .or("ticket_mode.is.null,ticket_mode.neq.external")
     .order("created_at");
 
   if (ticketError) throw new Error(ticketError.message);
@@ -46,14 +53,14 @@ export default async function BuyTicketsPage({ params, searchParams }: PageProps
   const venue = Array.isArray(show.venues) ? show.venues[0] : show.venues;
 
   return (
-    <main className="min-h-screen bg-stone-950 px-6 py-12 text-stone-100">
+    <main className="min-h-screen bg-stone-950 px-4 py-8 sm:px-6 sm:py-12 text-stone-100">
       <div className="mx-auto max-w-3xl">
         <Link href={`/shows/${slug}`} className="text-sm font-bold text-stone-400 hover:text-white">
           ← Back to Show
         </Link>
 
         <p className="mt-10 text-xs font-black uppercase tracking-[0.3em] text-red-500">Pocket Fuzz</p>
-        <h1 className="mt-3 text-4xl font-black uppercase">Buy Tickets</h1>
+        <h1 className="mt-3 text-3xl font-black uppercase sm:text-4xl">Buy Tickets</h1>
         <p className="mt-3 text-stone-400">{show.show_name || "Pocket Fuzz Show"}</p>
         <p className="mt-1 text-sm text-stone-500">
           {formatDate(show.show_date)}
@@ -67,9 +74,10 @@ export default async function BuyTicketsPage({ params, searchParams }: PageProps
           </div>
         ) : null}
 
+        <TicketSalesWindow cutoff={show.ticket_sales_cutoff} initiallyClosed={ticketSalesClosed(show.ticket_sales_cutoff)}>
         <form
           action={createVenmoOrder}
-          className="mt-8 space-y-8 rounded-2xl border border-stone-800 bg-stone-900 p-6 md:p-8"
+          className="mt-8 space-y-8 rounded-2xl border border-stone-800 bg-stone-900 p-4 sm:p-6 md:p-8"
         >
           <input type="hidden" name="show_id" value={show.id} />
           <input type="hidden" name="slug" value={slug} />
@@ -115,6 +123,7 @@ export default async function BuyTicketsPage({ params, searchParams }: PageProps
             Your ticket selections are saved before Venmo opens.
           </p>
         </form>
+        </TicketSalesWindow>
 
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <Link
@@ -139,12 +148,14 @@ export default async function BuyTicketsPage({ params, searchParams }: PageProps
 function OrderRow({ name, label, price }: { name: string; label: string; price: number }) {
   return (
     <div className="rounded-xl border border-stone-800 bg-stone-950 p-4">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <span className="font-bold">{label}</span>
         <span className="flex items-center gap-4">
           <strong>{formatCurrency(price)}</strong>
           <input
             name={name}
+            aria-label={label + " quantity"}
+            inputMode="numeric"
             type="number"
             min="0"
             step="1"
@@ -173,6 +184,7 @@ function Field({
       <span className="mb-2 block text-sm font-semibold">{label}</span>
       <input
         name={name}
+        autoComplete={name === "customer_name" ? "name" : name === "customer_email" ? "email" : name === "customer_phone" ? "tel" : undefined}
         type={type}
         required={required}
         className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3"

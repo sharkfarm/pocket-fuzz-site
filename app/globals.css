@@ -24,3 +24,17 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Flexible content and accessible controls on narrow and touch screens. */
+html { -webkit-text-size-adjust: 100%; }
+body { overflow-wrap: anywhere; }
+img, video, iframe { max-width: 100%; }
+input, select, textarea { min-width: 0; }
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid #ef4444;
+  outline-offset: 4px;
+}
+@media (max-width: 639px) {
+  input, select, textarea { font-size: 16px; }
+  input:not([type="checkbox"]):not([type="hidden"]), select, button { min-height: 44px; }
+}

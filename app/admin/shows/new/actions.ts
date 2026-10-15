@@ -1,5 +1,7 @@
 "use server";
 
+import { parseMountainCutoff } from "@/lib/ticket-sales";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -20,6 +22,12 @@ export async function createShow(formData: FormData) {
 
   const venueId = String(formData.get("venue_id") ?? "");
   const showDate = String(formData.get("show_date") ?? "");
+  let ticketSalesCutoff: string | null;
+  try {
+    ticketSalesCutoff = parseMountainCutoff(formData.get("ticket_sales_cutoff"));
+  } catch (error) {
+    redirect("/admin/shows/new?error=" + encodeURIComponent(error instanceof Error ? error.message : "Invalid cutoff."));
+  }
   const showName = String(formData.get("show_name") ?? "").trim();
 
   if (!venueId || !showDate) redirect("/admin/shows/new?error=Venue%20and%20date%20are%20required");
@@ -65,6 +73,7 @@ export async function createShow(formData: FormData) {
     venue_id: venueId,
     show_name: showName || `Pocket Fuzz at ${venue.name}`,
     show_date: showDate,
+      ticket_sales_cutoff: ticketSalesCutoff,
     doors_time: String(formData.get("doors_time") ?? "19:00") || null,
     start_time: String(formData.get("start_time") ?? "20:00") || null,
     end_time: String(formData.get("end_time") ?? "00:00") || null,

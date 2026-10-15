@@ -29,7 +29,7 @@ export default async function MerchPage({
   }
 
   return (
-    <main className="min-h-screen bg-stone-950 px-6 py-12 text-stone-100">
+    <main className="min-h-screen bg-stone-950 px-4 py-8 sm:px-6 sm:py-12 text-stone-100">
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <Link
@@ -51,7 +51,7 @@ export default async function MerchPage({
           Pocket Fuzz
         </p>
 
-        <h1 className="mt-3 text-5xl font-black uppercase">
+        <h1 className="mt-3 text-4xl font-black uppercase sm:text-5xl">
           Merch
         </h1>
 

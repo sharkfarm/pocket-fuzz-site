@@ -48,7 +48,7 @@ export default async function MerchPayPage({
   }
 
   return (
-    <main className="min-h-screen bg-stone-950 px-6 py-12 text-stone-100">
+    <main className="min-h-screen bg-stone-950 px-4 py-8 sm:px-6 sm:py-12 text-stone-100">
       <div className="mx-auto max-w-2xl">
         <Link
           href="/merch"
@@ -61,11 +61,11 @@ export default async function MerchPayPage({
           Pocket Fuzz
         </p>
 
-        <h1 className="mt-3 text-4xl font-black uppercase">
+        <h1 className="mt-3 text-3xl font-black uppercase sm:text-4xl">
           Pay with Venmo
         </h1>
 
-        <div className="mt-8 rounded-2xl border border-stone-800 bg-stone-900 p-6">
+        <div className="mt-8 rounded-2xl border border-stone-800 bg-stone-900 p-4 sm:p-6">
           <p className="text-sm text-stone-400">Order</p>
           <p className="text-2xl font-black">
             {order.order_number}

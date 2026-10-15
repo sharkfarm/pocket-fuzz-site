@@ -101,7 +101,8 @@ export default function MerchShop({
                     <img
                       src={product.image_url}
                       alt={product.name}
-                      className="h-full w-full object-cover"
+                      loading="lazy"
+                      className="h-full w-full object-contain"
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center px-6 text-center">
@@ -117,8 +118,8 @@ export default function MerchShop({
                   )}
                 </div>
 
-                <div className="p-6">
-                  <div className="flex items-start justify-between gap-5">
+                <div className="p-4 sm:p-6">
+                  <div className="flex flex-wrap items-start justify-between gap-5">
                     <div>
                       <h2 className="text-2xl font-black uppercase">
                         {product.name}
@@ -166,6 +167,7 @@ export default function MerchShop({
                               </span>
 
                               <input
+                                aria-label={product.name + " size " + size + " quantity"}
                                 name={key}
                                 type="number"
                                 inputMode="numeric"
@@ -223,7 +225,7 @@ export default function MerchShop({
 
       {products.length > 0 ? (
         <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_360px]">
-          <section className="rounded-2xl border border-stone-800 bg-stone-900 p-6">
+          <section className="rounded-2xl border border-stone-800 bg-stone-900 p-4 sm:p-6">
             <h2 className="text-xl font-black uppercase">
               Your Information
             </h2>
@@ -261,7 +263,7 @@ export default function MerchShop({
             </label>
           </section>
 
-          <aside className="rounded-2xl border border-stone-800 bg-stone-900 p-6 lg:sticky lg:top-6 lg:self-start">
+          <aside className="rounded-2xl border border-stone-800 bg-stone-900 p-4 sm:p-6 lg:sticky lg:top-6 lg:self-start">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-stone-500">
               Order Summary
             </p>
@@ -348,6 +350,7 @@ function Field({
 
       <input
         name={name}
+        autoComplete={name === "customer_name" ? "name" : name === "customer_email" ? "email" : name === "customer_phone" ? "tel" : undefined}
         type={type}
         required={required}
         className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3"

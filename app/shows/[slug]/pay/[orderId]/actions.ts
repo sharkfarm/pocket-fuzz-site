@@ -30,7 +30,7 @@ export async function submitVenmoConfirmation(formData: FormData) {
   // Do not roll an already-finalized order backward to "submitted".
   const { data: existingOrder, error: lookupError } = await supabase
     .from("venmo_orders")
-    .select("status")
+    .select("status,show_id")
     .eq("id", orderId)
     .maybeSingle();
 
@@ -49,6 +49,15 @@ export async function submitVenmoConfirmation(formData: FormData) {
       )}`
     );
   }
+
+  const { data: show, error: showError } = await supabase
+    .from("shows")
+    .select("id")
+    .eq("id", existingOrder.show_id)
+    .eq("public_slug", slug)
+    .maybeSingle();
+  if (showError) throw new Error(showError.message);
+  if (!show) throw new Error("Order does not belong to this show.");
 
   if (
     existingOrder.status === "approved" ||

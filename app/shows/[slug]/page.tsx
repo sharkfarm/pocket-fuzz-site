@@ -1,3 +1,8 @@
+import TicketSalesWindow from "@/components/ticket-sales-window";
+import { ticketSalesClosed } from "@/lib/ticket-sales";
+
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -32,6 +37,7 @@ export default async function PublicShowPage({
       public_description,
       flyer_url,
       ticket_sales_status,
+      ticket_sales_cutoff,
       venues(name,address,city,state)
     `)
     .eq("public_slug", slug)
@@ -71,9 +77,9 @@ export default async function PublicShowPage({
   );
 
   return (
-    <main className="min-h-screen bg-stone-950 px-6 py-12 text-stone-100">
+    <main className="min-h-screen bg-stone-950 px-4 py-8 sm:px-6 sm:py-12 text-stone-100">
       <div className="mx-auto max-w-3xl">
-        <div className="mb-10 flex items-center justify-between gap-4">
+        <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
           <Link
             href="/shows"
             className="text-sm font-bold text-stone-400 hover:text-white"
@@ -93,7 +99,7 @@ export default async function PublicShowPage({
           Pocket Fuzz
         </p>
 
-        <h1 className="mt-3 text-4xl font-black uppercase">
+        <h1 className="mt-3 text-3xl font-black uppercase sm:text-4xl">
           {show.show_name || "Pocket Fuzz Show"}
         </h1>
 
@@ -123,6 +129,7 @@ export default async function PublicShowPage({
           </div>
         ) : null}
 
+        <TicketSalesWindow cutoff={show.ticket_sales_cutoff} initiallyClosed={ticketSalesClosed(show.ticket_sales_cutoff)}>
         {ticketsComingSoon ? (
           <section className="mt-10 rounded-2xl border border-amber-800 bg-amber-950/30 p-8 text-center">
             <p className="text-xs font-black uppercase tracking-[0.3em] text-amber-400">
@@ -141,7 +148,7 @@ export default async function PublicShowPage({
         ) : (
           <div className="mt-10 space-y-6">
             {externalTickets.map((ticket) => (
-              <section key={ticket.id} className="rounded-2xl border border-stone-800 bg-stone-900 p-6 md:p-8">
+              <section key={ticket.id} className="rounded-2xl border border-stone-800 bg-stone-900 p-4 sm:p-6 md:p-8">
                 <p className="text-xs font-black uppercase tracking-[0.3em] text-red-500">Tickets</p>
                 <h2 className="mt-2 text-2xl font-black uppercase">{ticket.ticket_type}</h2>
                 {ticket.public_note ? <p className="mt-3 text-stone-300">{ticket.public_note}</p> : null}
@@ -152,7 +159,7 @@ export default async function PublicShowPage({
             ))}
 
             {standardTickets.length > 0 ? (
-              <form action={createVenmoOrder} className="space-y-8 rounded-2xl border border-stone-800 bg-stone-900 p-6 md:p-8">
+              <form action={createVenmoOrder} className="space-y-8 rounded-2xl border border-stone-800 bg-stone-900 p-4 sm:p-6 md:p-8">
                 <input type="hidden" name="show_id" value={show.id} />
                 <input type="hidden" name="slug" value={slug} />
                 <section>
@@ -198,6 +205,7 @@ export default async function PublicShowPage({
             ) : null}
           </div>
         )}
+        </TicketSalesWindow>
       </div>
     </main>
   );
@@ -216,7 +224,7 @@ function OrderRow({
 }) {
   return (
     <div className="rounded-xl border border-stone-800 bg-stone-950 p-4">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <span>
           <span className="font-bold">{label}</span>
           {venmoServiceFee ? (
@@ -231,6 +239,8 @@ function OrderRow({
 
           <input
             name={name}
+            aria-label={label + " quantity"}
+            inputMode="numeric"
             type="number"
             min="0"
             step="1"
@@ -262,6 +272,7 @@ function Field({
 
       <input
         name={name}
+        autoComplete={name === "customer_name" ? "name" : name === "customer_email" ? "email" : name === "customer_phone" ? "tel" : undefined}
         type={type}
         required={required}
         className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3"

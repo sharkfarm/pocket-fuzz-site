@@ -53,15 +53,15 @@ export default async function PublicShowsPage() {
   const shows = (data ?? []) as PublicShow[];
 
   return (
-    <main className="min-h-screen bg-stone-950 px-6 py-16 text-stone-100">
+    <main className="min-h-screen bg-stone-950 px-4 py-10 sm:px-6 sm:py-16 text-stone-100">
       <div className="mx-auto max-w-6xl">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.3em] text-red-500">
               Pocket Fuzz
             </p>
 
-            <h1 className="mt-3 text-5xl font-black uppercase">
+            <h1 className="mt-3 text-4xl font-black uppercase sm:text-5xl">
               Shows
             </h1>
           </div>
@@ -96,7 +96,7 @@ export default async function PublicShowsPage() {
                     <img
                       src={show.flyer_url}
                       alt={show.show_name ?? "Pocket Fuzz show flyer"}
-                      className="aspect-[16/9] w-full object-cover"
+                      className="aspect-[4/3] w-full object-contain"
                     />
                   ) : null}
 
@@ -142,7 +142,7 @@ export default async function PublicShowsPage() {
         ) : null}
 
         {!error && shows.length === 0 ? (
-          <div className="mt-10 rounded-2xl border border-stone-800 bg-stone-900 p-8 text-stone-400">
+          <div className="mt-10 rounded-2xl border border-stone-800 bg-stone-900 p-5 sm:p-8 text-stone-400">
             No public shows are currently listed. In the admin dashboard, make
             sure the show has a public slug and “Publish this show on the
             website” is checked.
