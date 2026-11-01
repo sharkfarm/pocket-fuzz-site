@@ -224,6 +224,7 @@ export async function createManualVenmoOrder(formData: FormData) {
   });
 
   revalidatePath("/admin/venmo");
+  revalidatePath("/admin/shows/[id]", "page");
   redirect("/admin/venmo?status=pending&saved=manual");
 }
 
@@ -345,6 +346,7 @@ export async function sendVenmoReceipt(formData: FormData) {
   }
 
   revalidatePath("/admin/venmo");
+  revalidatePath("/admin/shows/[id]", "page");
   redirect("/admin/venmo?status=approved&saved=receipt");
 }
 
@@ -422,6 +424,7 @@ export async function approveVenmoOrder(formData: FormData) {
   }
 
   revalidatePath("/admin/venmo");
+  revalidatePath("/admin/shows/[id]", "page");
   revalidatePath("/admin/shows");
   redirect("/admin/venmo?saved=approved");
 }
@@ -464,6 +467,7 @@ export async function declineVenmoOrder(formData: FormData) {
   }
 
   revalidatePath("/admin/venmo");
+  revalidatePath("/admin/shows/[id]", "page");
   redirect("/admin/venmo?saved=declined");
 }
 
@@ -516,5 +520,6 @@ export async function deleteVenmoOrder(formData: FormData) {
   }
 
   revalidatePath("/admin/venmo");
+  revalidatePath("/admin/shows/[id]", "page");
   redirect("/admin/venmo?saved=deleted");
 }

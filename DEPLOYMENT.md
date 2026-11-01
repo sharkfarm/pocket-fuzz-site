@@ -10,3 +10,16 @@ Existing shows receive a null cutoff and retain their sales-status setting. No c
 Merchandise-only orders (show_id = null) are unaffected. The migration does not alter order approval, ticket inventory, receipt emails or PF-Com integration.
 
 Automated cutoff regression checks: node --test tests/ticket-sales.test.cjs.
+
+
+# Show bookkeeping ledger
+
+Apply supabase/05-show-ledger.sql before deploying this version. It creates an authenticated-only per-show cash activity table with immutable manual entries and reasoned voids. It follows the existing admin authorization model (authenticated admin users); no anonymous ledger access is allowed. No environment changes are required.
+
+The ledger is in each show detail page. It reads approved show-linked Venmo orders, actual expense rows and paid member payouts live, so editing a source updates the ledger. Pending/declined/cancelled orders, projected ticket sales and unpaid member allocations are excluded. Ticket/merch totals and calculated band payout are reconciliation references, not extra ledger receipts. Merchandise orders with no show are excluded.
+
+Manual entries support non-Venmo receipts, settlement receipts, other cash spending/fees/refunds, and internal deposits/transfers. A deposit between accounts is a transfer, not income. Manual entries do not change source ticket counts, merchandise quantities, show profit or assigned payouts: use the existing Expenses and Member Payouts sections for those. Do not duplicate an automatically linked record with a manual entry. Actual expense costs are not a guarantee of bank payment; recorded net is not a reconciled bank balance.
+
+Source activity remains editable in the existing source sections; only manual ledger entries are immutable. Correct a manual entry by voiding it with a reason and posting a replacement. CSV export uses the visible filtered rows; running net retains full-show context. Dates use Mountain Time.
+
+Deployment smoke checks: add a manual cash receipt, add a Venmo-to-checking transfer (net must not change), void the receipt, export CSV, update an expense/member payout, and approve a test Venmo order. Check that each source appears once and pending orders do not affect net. Verify external-ticket URL/note fields and standard ticket controls at phone and desktop widths.

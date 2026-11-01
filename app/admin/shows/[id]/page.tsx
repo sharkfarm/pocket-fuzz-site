@@ -1,3 +1,5 @@
+import ShowLedger from "@/components/admin/show-ledger";
+import ShowTicketEditor from "@/components/admin/show-ticket-editor";
 import { mountainDateTimeInput } from "@/lib/ticket-sales";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -434,6 +436,15 @@ export default async function ShowDetailPage({
             </form>
           </div>
         </header>
+
+        <nav aria-label="Show sections" className="my-6 flex flex-wrap gap-3 text-sm font-bold">
+          <a href="#bookkeeping" className="rounded-lg border border-stone-700 px-4 py-3">Bookkeeping Ledger</a>
+          <a href="#show-expenses" className="rounded-lg border border-stone-700 px-4 py-3">Expenses</a>
+          <a href="#member-payouts" className="rounded-lg border border-stone-700 px-4 py-3">Member Payouts</a>
+        </nav>
+
+        {query.saved === "ledger" ? <SuccessMessage>Ledger entry posted.</SuccessMessage> : null}
+        {query.saved === "ledger-void" ? <SuccessMessage>Ledger entry voided. Original entry retained in history.</SuccessMessage> : null}
 
         {query.saved === "deal-terms" ? (
           <SuccessMessage>Show deal terms saved. Venue defaults were not changed.</SuccessMessage>
@@ -940,203 +951,7 @@ export default async function ShowDetailPage({
 
           <form action={updateTicketSales}>
             <input type="hidden" name="show_id" value={id} />
-            <p className="px-6 py-4 text-sm text-stone-400">Scroll horizontally to edit all ticket options on smaller screens.</p>
-            <div className="overflow-x-auto [overflow-wrap:normal]" role="region" aria-label="Show ticket sales editor" tabIndex={0}>
-              <table className="w-full min-w-[1450px] text-left">
-                <colgroup>
-                  <col className="w-80" />
-                  <col className="w-44" />
-                  <col className="w-40" />
-                  <col className="w-36" />
-                  <col className="w-36" />
-                  <col className="w-36" />
-                  <col className="w-40" />
-                  <col className="w-40" />
-                  <col className="w-28" />
-                </colgroup>
-                <thead className="bg-stone-950 text-xs uppercase tracking-wide text-stone-500">
-                  <tr>
-                    <th className="whitespace-nowrap px-4 py-4">Ticket Type</th>
-                    <th className="whitespace-nowrap px-4 py-4">Channel</th>
-                    <th className="whitespace-nowrap px-4 py-4">Price</th>
-                    <th className="whitespace-nowrap px-4 py-4">Projected</th>
-                    <th className="whitespace-nowrap px-4 py-4">Actual Sold</th>
-                    <th className="whitespace-nowrap px-4 py-4">Revenue</th>
-                    <th className="whitespace-nowrap px-4 py-4">Presale Payout</th>
-                    <th className="whitespace-nowrap px-4 py-4">Venmo Fee</th>
-                    <th className="whitespace-nowrap px-4 py-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {tickets.map((ticket) => {
-                    const ticketRevenue =
-                      Number(ticket.ticket_price) *
-                      Number(ticket.actual_quantity);
-
-                    return (
-                      <tr
-                        key={ticket.id}
-                        className="border-t border-stone-800"
-                      >
-                        <td className="whitespace-nowrap px-4 py-5 font-bold">
-                          <input
-                            type="hidden"
-                            name="ticket_id"
-                            value={ticket.id}
-                          />
-                          <input
-                            type="hidden"
-                            name={`ticket_mode_${ticket.id}`}
-                            value={ticket.ticket_mode ?? "standard"}
-                          />
-                          <input
-                            name={`ticket_type_${ticket.id}`}
-                            type="text"
-                            defaultValue={ticket.ticket_type}
-                            required
-                            className="w-full min-w-64 rounded-lg border border-stone-700 bg-stone-950 px-3 py-2 font-bold outline-none focus:border-red-500"
-                          />
-                          {ticket.ticket_mode === "external" ? (
-                            <div className="mt-2 space-y-2">
-                              <input
-                                name={`external_url_${ticket.id}`}
-                                type="url"
-                                defaultValue={ticket.external_url ?? ""}
-                                placeholder="https://tickets.example.com"
-                                required
-                                className="w-full min-w-64 rounded-lg border border-stone-700 bg-stone-950 px-3 py-2 text-xs outline-none focus:border-red-500"
-                              />
-                              <textarea
-                                name={`public_note_${ticket.id}`}
-                                defaultValue={ticket.public_note ?? ""}
-                                placeholder="Public note (optional)"
-                                rows={2}
-                                className="w-full min-w-64 rounded-lg border border-stone-700 bg-stone-950 px-3 py-2 text-xs outline-none focus:border-red-500"
-                              />
-                            </div>
-                          ) : null}
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-5">
-                          <select
-                            name={`ticket_channel_${ticket.id}`}
-                            defaultValue={ticket.channel}
-                            required
-                            className="w-36 rounded-lg border border-stone-700 bg-stone-950 px-3 py-2 outline-none focus:border-red-500"
-                          >
-                            <option value="online">Online</option>
-                            <option value="offline">Offline</option>
-                            <option value="door">Door</option>
-                            <option value="reserved">Reserved</option>
-                          </select>
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-stone-500">$</span>
-                            <input
-                              name={`ticket_price_${ticket.id}`}
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              defaultValue={Number(
-                                ticket.ticket_price
-                              ).toFixed(2)}
-                              className="w-24 rounded-lg border border-stone-700 bg-stone-950 px-3 py-2 outline-none focus:border-red-500"
-                            />
-                          </div>
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-5">
-                          <input
-                            name={`projected_quantity_${ticket.id}`}
-                            type="number"
-                            min="0"
-                            step="1"
-                            defaultValue={ticket.projected_quantity}
-                            className="w-24 rounded-lg border border-stone-700 bg-stone-950 px-3 py-2 outline-none focus:border-red-500"
-                          />
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-5">
-                          <input
-                            name={`actual_quantity_${ticket.id}`}
-                            type="number"
-                            min="0"
-                            step="1"
-                            defaultValue={ticket.actual_quantity}
-                            className="w-24 rounded-lg border border-stone-700 bg-stone-950 px-3 py-2 outline-none focus:border-red-500"
-                          />
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-5 font-bold">
-                          {formatCurrency(ticketRevenue)}
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-5">
-                          <label className="inline-flex whitespace-nowrap items-center gap-2 text-sm font-semibold">
-                            <input
-                              type="checkbox"
-                              name={`include_in_presale_payout_${ticket.id}`}
-                              defaultChecked={
-                                ticket.include_in_presale_payout !== false
-                              }
-                              className="h-4 w-4"
-                            />
-                            Include
-                          </label>
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-5">
-                          <label className="inline-flex whitespace-nowrap items-center gap-2 text-sm font-semibold">
-                            <input
-                              type="checkbox"
-                              name={`venmo_service_fee_${ticket.id}`}
-                              defaultChecked={Boolean(ticket.venmo_service_fee)}
-                              className="h-4 w-4"
-                            />
-                            Charge fee
-                          </label>
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-5 text-right">
-                          <button
-                            type="submit"
-                            form={`delete-ticket-${ticket.id}`}
-                            className="text-sm font-bold text-red-400 hover:text-red-300"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-
-                <tfoot className="border-t border-stone-700 bg-stone-950/60">
-                  <tr>
-                    <td
-                      colSpan={3}
-                      className="whitespace-nowrap px-4 py-5 font-black uppercase"
-                    >
-                      Actual Totals
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-5 text-stone-500">—</td>
-                    <td className="whitespace-nowrap px-4 py-5 font-black">
-                      {actualTickets}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-5 font-black">
-                      {formatCurrency(
-                        Number(show.gross_ticket_sales)
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-5" />
-                    <td className="whitespace-nowrap px-4 py-5" />
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+            <ShowTicketEditor tickets={tickets} />
 
             <div className="flex justify-end border-t border-stone-800 px-6 py-5">
               <button
@@ -1209,7 +1024,13 @@ export default async function ShowDetailPage({
           </div>
         </section>
 
-        <section className="mt-8 overflow-hidden rounded-2xl border border-stone-800 bg-stone-900">
+        <ShowLedger showId={id} overview={{
+          tickets: actualTickets, ticketGross: grossTicketRevenue, bandTicketPayout,
+          merchGross: merchRevenue, merchProfit,
+          assignedPayouts: totalAssignedPayments, paidPayouts: totalPaidPayments,
+        }} />
+
+        <section id="show-expenses" className="mt-8 overflow-hidden rounded-2xl border border-stone-800 bg-stone-900">
           <div className="border-b border-stone-800 px-6 py-5">
             <h2 className="text-xl font-black uppercase">
               Show Expenses
@@ -1646,7 +1467,7 @@ export default async function ShowDetailPage({
           </form>
         </section>
 
-        <section className="mt-8 rounded-2xl border border-stone-800 bg-stone-900 p-6">
+        <section id="member-payouts" className="mt-8 rounded-2xl border border-stone-800 bg-stone-900 p-6">
           <h2 className="text-xl font-black uppercase">Band Payout Splits</h2>
           <p className="mt-1 text-sm text-stone-400">Assign each member a payout and track whether it has been paid.</p>
 
