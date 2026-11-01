@@ -1,10 +1,45 @@
 "use server";
 
+import { parseShowDealTerms } from "@/lib/show-deal-terms";
 import { parseMountainCutoff } from "@/lib/ticket-sales";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+
+export async function updateShowDealTerms(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/admin/login");
+
+  const showId = String(formData.get("show_id") ?? "");
+  if (!showId) throw new Error("Show ID is missing.");
+  const returnPath = "/admin/shows/" + encodeURIComponent(showId);
+  let terms;
+  try {
+    terms = parseShowDealTerms(formData);
+  } catch (error) {
+    redirect(returnPath + "?error=" + encodeURIComponent(error instanceof Error ? error.message : "Invalid deal terms."));
+  }
+
+  // Returning the row detects denied/no-op updates and database-side overrides.
+  const { data: saved, error } = await supabase.from("shows")
+    .update(terms)
+    .eq("id", showId)
+    .select(Object.keys(terms).join(","))
+    .single();
+  if (error || !saved) {
+    redirect(returnPath + "?error=" + encodeURIComponent(error?.message ?? "The show deal terms could not be saved."));
+  }
+  if (Object.entries(terms).some(([key, value]) => Number((saved as unknown as Record<string, unknown>)[key]) !== value)) {
+    redirect(returnPath + "?error=" + encodeURIComponent("The database did not retain the requested deal terms. Check Supabase show triggers before trying again."));
+  }
+
+  revalidatePath("/admin/shows");
+  revalidatePath(returnPath);
+  revalidatePath("/admin/reports");
+  redirect(returnPath + "?saved=deal-terms");
+}
 
 export async function updateTicketSales(formData: FormData) {
   const supabase = await createClient();
@@ -18,58 +53,7 @@ export async function updateTicketSales(formData: FormData) {
   }
 
   const showId = String(formData.get("show_id") ?? "");
-  const facilityFeePerTicket = Number(formData.get("facility_fee_per_ticket") ?? 2);
-  const packageExpenses = Number(formData.get("package_expenses") ?? 250);
-  const dealBasePercent = Number(formData.get("deal_base_percent") ?? 50);
-  const dealTier1Threshold = Number(formData.get("deal_tier_1_threshold") ?? 50);
-  const dealTier1Percent = Number(formData.get("deal_tier_1_percent") ?? 60);
-  const dealTier2Threshold = Number(formData.get("deal_tier_2_threshold") ?? 100);
-  const dealTier2Percent = Number(formData.get("deal_tier_2_percent") ?? 70);
-
-  if (!showId) {
-    throw new Error("Show ID is missing.");
-  }
-
-  const dealValues = [
-    facilityFeePerTicket,
-    packageExpenses,
-    dealBasePercent,
-    dealTier1Threshold,
-    dealTier1Percent,
-    dealTier2Threshold,
-    dealTier2Percent,
-  ];
-
-  if (
-    dealValues.some((value) => !Number.isFinite(value) || value < 0) ||
-    !Number.isInteger(dealTier1Threshold) ||
-    !Number.isInteger(dealTier2Threshold) ||
-    dealTier2Threshold < dealTier1Threshold ||
-    dealBasePercent > 100 ||
-    dealTier1Percent > 100 ||
-    dealTier2Percent > 100
-  ) {
-    redirect(`/admin/shows/${showId}?error=${encodeURIComponent(
-      "Deal terms must be valid. Tier 2 must be at or above Tier 1, and percentages cannot exceed 100."
-    )}`);
-  }
-
-  const { error: dealError } = await supabase
-    .from("shows")
-    .update({
-      facility_fee_per_ticket: facilityFeePerTicket,
-      package_expenses: packageExpenses,
-      deal_base_percent: dealBasePercent,
-      deal_tier_1_threshold: dealTier1Threshold,
-      deal_tier_1_percent: dealTier1Percent,
-      deal_tier_2_threshold: dealTier2Threshold,
-      deal_tier_2_percent: dealTier2Percent,
-    })
-    .eq("id", showId);
-
-  if (dealError) {
-    redirect(`/admin/shows/${showId}?error=${encodeURIComponent(dealError.message)}`);
-  }
+  if (!showId) throw new Error("Show ID is missing.");
 
   const ticketIds = formData.getAll("ticket_id").map(String);
 

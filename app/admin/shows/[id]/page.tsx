@@ -21,6 +21,7 @@ import {
   updateShowSettlement,
   updateShowPayment,
   updateTicketSales,
+  updateShowDealTerms,
 } from "./actions";
 import DeleteShowButton from "./delete-show-button";
 
@@ -433,6 +434,10 @@ export default async function ShowDetailPage({
             </form>
           </div>
         </header>
+
+        {query.saved === "deal-terms" ? (
+          <SuccessMessage>Show deal terms saved. Venue defaults were not changed.</SuccessMessage>
+        ) : null}
 
         {query.saved === "tickets" ? (
           <SuccessMessage>Ticket sales updated.</SuccessMessage>
@@ -896,17 +901,18 @@ export default async function ShowDetailPage({
             />
           </div>
 
-          <form action={updateTicketSales}>
+          <form action={updateShowDealTerms}>
             <input type="hidden" name="show_id" value={id} />
+            <p className="px-6 pt-5 text-sm text-stone-400">These deal terms apply only to this show. Saving them does not change the venue defaults.</p>
 
             <div className="grid gap-4 border-b border-stone-800 p-6 sm:grid-cols-2 xl:grid-cols-4">
-              <ExpenseField label="Facility Fee / Ticket" name="facility_fee_per_ticket" type="number" min="0" step="0.01" defaultValue={facilityFeePerTicket.toFixed(2)} />
-              <ExpenseField label="Package Expenses" name="package_expenses" type="number" min="0" step="0.01" defaultValue={packageExpenses.toFixed(2)} />
-              <ExpenseField label="Base Deal %" name="deal_base_percent" type="number" min="0" step="0.01" defaultValue={String(dealBasePercent)} />
-              <ExpenseField label="Tier 1 Tickets" name="deal_tier_1_threshold" type="number" min="0" step="1" defaultValue={String(dealTier1Threshold)} />
-              <ExpenseField label="Tier 1 Deal %" name="deal_tier_1_percent" type="number" min="0" step="0.01" defaultValue={String(dealTier1Percent)} />
-              <ExpenseField label="Tier 2 Tickets" name="deal_tier_2_threshold" type="number" min="0" step="1" defaultValue={String(dealTier2Threshold)} />
-              <ExpenseField label="Tier 2 Deal %" name="deal_tier_2_percent" type="number" min="0" step="0.01" defaultValue={String(dealTier2Percent)} />
+              <ExpenseField label="Facility Fee / Ticket" name="facility_fee_per_ticket" required type="number" min="0" step="0.01" defaultValue={facilityFeePerTicket.toFixed(2)} />
+              <ExpenseField label="Package Expenses" name="package_expenses" required type="number" min="0" step="0.01" defaultValue={packageExpenses.toFixed(2)} />
+              <ExpenseField label="Base Deal %" name="deal_base_percent" required type="number" min="0" step="0.01" defaultValue={String(dealBasePercent)} />
+              <ExpenseField label="Tier 1 Tickets" name="deal_tier_1_threshold" required type="number" min="0" step="1" defaultValue={String(dealTier1Threshold)} />
+              <ExpenseField label="Tier 1 Deal %" name="deal_tier_1_percent" required type="number" min="0" step="0.01" defaultValue={String(dealTier1Percent)} />
+              <ExpenseField label="Tier 2 Tickets" name="deal_tier_2_threshold" required type="number" min="0" step="1" defaultValue={String(dealTier2Threshold)} />
+              <ExpenseField label="Tier 2 Deal %" name="deal_tier_2_percent" required type="number" min="0" step="0.01" defaultValue={String(dealTier2Percent)} />
               <div className="rounded-lg border border-stone-700 bg-stone-950 p-4 text-sm text-stone-300">
                 <p className="font-black uppercase">Current Calculation</p>
                 <p className="mt-2">
@@ -927,19 +933,38 @@ export default async function ShowDetailPage({
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[850px] text-left">
+            <div className="flex justify-end border-t border-stone-800 px-6 py-5">
+              <button type="submit" className="rounded-lg bg-red-600 px-6 py-3 font-black uppercase tracking-wide text-white hover:bg-red-500">Save Show Deal Terms</button>
+            </div>
+          </form>
+
+          <form action={updateTicketSales}>
+            <input type="hidden" name="show_id" value={id} />
+            <p className="px-6 py-4 text-sm text-stone-400">Scroll horizontally to edit all ticket options on smaller screens.</p>
+            <div className="overflow-x-auto [overflow-wrap:normal]" role="region" aria-label="Show ticket sales editor" tabIndex={0}>
+              <table className="w-full min-w-[1450px] text-left">
+                <colgroup>
+                  <col className="w-80" />
+                  <col className="w-44" />
+                  <col className="w-40" />
+                  <col className="w-36" />
+                  <col className="w-36" />
+                  <col className="w-36" />
+                  <col className="w-40" />
+                  <col className="w-40" />
+                  <col className="w-28" />
+                </colgroup>
                 <thead className="bg-stone-950 text-xs uppercase tracking-wide text-stone-500">
                   <tr>
-                    <th className="px-6 py-4">Ticket Type</th>
-                    <th className="px-6 py-4">Channel</th>
-                    <th className="px-6 py-4">Price</th>
-                    <th className="px-6 py-4">Projected</th>
-                    <th className="px-6 py-4">Actual Sold</th>
-                    <th className="px-6 py-4">Revenue</th>
-                    <th className="px-6 py-4">Presale Payout</th>
-                    <th className="px-6 py-4">Venmo Fee</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
+                    <th className="whitespace-nowrap px-4 py-4">Ticket Type</th>
+                    <th className="whitespace-nowrap px-4 py-4">Channel</th>
+                    <th className="whitespace-nowrap px-4 py-4">Price</th>
+                    <th className="whitespace-nowrap px-4 py-4">Projected</th>
+                    <th className="whitespace-nowrap px-4 py-4">Actual Sold</th>
+                    <th className="whitespace-nowrap px-4 py-4">Revenue</th>
+                    <th className="whitespace-nowrap px-4 py-4">Presale Payout</th>
+                    <th className="whitespace-nowrap px-4 py-4">Venmo Fee</th>
+                    <th className="whitespace-nowrap px-4 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
 
@@ -954,7 +979,7 @@ export default async function ShowDetailPage({
                         key={ticket.id}
                         className="border-t border-stone-800"
                       >
-                        <td className="px-6 py-5 font-bold">
+                        <td className="whitespace-nowrap px-4 py-5 font-bold">
                           <input
                             type="hidden"
                             name="ticket_id"
@@ -970,7 +995,7 @@ export default async function ShowDetailPage({
                             type="text"
                             defaultValue={ticket.ticket_type}
                             required
-                            className="w-44 rounded-lg border border-stone-700 bg-stone-950 px-3 py-2 font-bold outline-none focus:border-red-500"
+                            className="w-full min-w-64 rounded-lg border border-stone-700 bg-stone-950 px-3 py-2 font-bold outline-none focus:border-red-500"
                           />
                           {ticket.ticket_mode === "external" ? (
                             <div className="mt-2 space-y-2">
@@ -980,20 +1005,20 @@ export default async function ShowDetailPage({
                                 defaultValue={ticket.external_url ?? ""}
                                 placeholder="https://tickets.example.com"
                                 required
-                                className="w-64 rounded-lg border border-stone-700 bg-stone-950 px-3 py-2 text-xs outline-none focus:border-red-500"
+                                className="w-full min-w-64 rounded-lg border border-stone-700 bg-stone-950 px-3 py-2 text-xs outline-none focus:border-red-500"
                               />
                               <textarea
                                 name={`public_note_${ticket.id}`}
                                 defaultValue={ticket.public_note ?? ""}
                                 placeholder="Public note (optional)"
                                 rows={2}
-                                className="w-64 rounded-lg border border-stone-700 bg-stone-950 px-3 py-2 text-xs outline-none focus:border-red-500"
+                                className="w-full min-w-64 rounded-lg border border-stone-700 bg-stone-950 px-3 py-2 text-xs outline-none focus:border-red-500"
                               />
                             </div>
                           ) : null}
                         </td>
 
-                        <td className="px-6 py-5">
+                        <td className="whitespace-nowrap px-4 py-5">
                           <select
                             name={`ticket_channel_${ticket.id}`}
                             defaultValue={ticket.channel}
@@ -1007,7 +1032,7 @@ export default async function ShowDetailPage({
                           </select>
                         </td>
 
-                        <td className="px-6 py-5">
+                        <td className="whitespace-nowrap px-4 py-5">
                           <div className="flex items-center gap-2">
                             <span className="text-stone-500">$</span>
                             <input
@@ -1023,7 +1048,7 @@ export default async function ShowDetailPage({
                           </div>
                         </td>
 
-                        <td className="px-6 py-5">
+                        <td className="whitespace-nowrap px-4 py-5">
                           <input
                             name={`projected_quantity_${ticket.id}`}
                             type="number"
@@ -1034,7 +1059,7 @@ export default async function ShowDetailPage({
                           />
                         </td>
 
-                        <td className="px-6 py-5">
+                        <td className="whitespace-nowrap px-4 py-5">
                           <input
                             name={`actual_quantity_${ticket.id}`}
                             type="number"
@@ -1045,12 +1070,12 @@ export default async function ShowDetailPage({
                           />
                         </td>
 
-                        <td className="px-6 py-5 font-bold">
+                        <td className="whitespace-nowrap px-4 py-5 font-bold">
                           {formatCurrency(ticketRevenue)}
                         </td>
 
-                        <td className="px-6 py-5">
-                          <label className="inline-flex items-center gap-2 text-sm font-semibold">
+                        <td className="whitespace-nowrap px-4 py-5">
+                          <label className="inline-flex whitespace-nowrap items-center gap-2 text-sm font-semibold">
                             <input
                               type="checkbox"
                               name={`include_in_presale_payout_${ticket.id}`}
@@ -1063,8 +1088,8 @@ export default async function ShowDetailPage({
                           </label>
                         </td>
 
-                        <td className="px-6 py-5">
-                          <label className="inline-flex items-center gap-2 text-sm font-semibold">
+                        <td className="whitespace-nowrap px-4 py-5">
+                          <label className="inline-flex whitespace-nowrap items-center gap-2 text-sm font-semibold">
                             <input
                               type="checkbox"
                               name={`venmo_service_fee_${ticket.id}`}
@@ -1075,7 +1100,7 @@ export default async function ShowDetailPage({
                           </label>
                         </td>
 
-                        <td className="px-6 py-5 text-right">
+                        <td className="whitespace-nowrap px-4 py-5 text-right">
                           <button
                             type="submit"
                             form={`delete-ticket-${ticket.id}`}
@@ -1093,21 +1118,21 @@ export default async function ShowDetailPage({
                   <tr>
                     <td
                       colSpan={3}
-                      className="px-6 py-5 font-black uppercase"
+                      className="whitespace-nowrap px-4 py-5 font-black uppercase"
                     >
                       Actual Totals
                     </td>
-                    <td className="px-6 py-5 text-stone-500">—</td>
-                    <td className="px-6 py-5 font-black">
+                    <td className="whitespace-nowrap px-4 py-5 text-stone-500">—</td>
+                    <td className="whitespace-nowrap px-4 py-5 font-black">
                       {actualTickets}
                     </td>
-                    <td className="px-6 py-5 font-black">
+                    <td className="whitespace-nowrap px-4 py-5 font-black">
                       {formatCurrency(
                         Number(show.gross_ticket_sales)
                       )}
                     </td>
-                    <td className="px-6 py-5" />
-                    <td className="px-6 py-5" />
+                    <td className="whitespace-nowrap px-4 py-5" />
+                    <td className="whitespace-nowrap px-4 py-5" />
                   </tr>
                 </tfoot>
               </table>
