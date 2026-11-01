@@ -1,4 +1,3 @@
-import ShowLedger from "@/components/admin/show-ledger";
 import ShowTicketEditor from "@/components/admin/show-ticket-editor";
 import { mountainDateTimeInput } from "@/lib/ticket-sales";
 import Link from "next/link";
@@ -438,7 +437,7 @@ export default async function ShowDetailPage({
         </header>
 
         <nav aria-label="Show sections" className="my-6 flex flex-wrap gap-3 text-sm font-bold">
-          <a href="#bookkeeping" className="rounded-lg border border-stone-700 px-4 py-3">Bookkeeping Ledger</a>
+          <a href="#bookkeeping" className="rounded-lg border border-stone-700 px-4 py-3">Band Ledger</a>
           <a href="#show-expenses" className="rounded-lg border border-stone-700 px-4 py-3">Expenses</a>
           <a href="#member-payouts" className="rounded-lg border border-stone-700 px-4 py-3">Member Payouts</a>
         </nav>
@@ -1024,11 +1023,14 @@ export default async function ShowDetailPage({
           </div>
         </section>
 
-        <ShowLedger showId={id} overview={{
-          tickets: actualTickets, ticketGross: grossTicketRevenue, bandTicketPayout,
-          merchGross: merchRevenue, merchProfit,
-          assignedPayouts: totalAssignedPayments, paidPayouts: totalPaidPayments,
-        }} />
+        <section id="bookkeeping" className="mt-8 rounded-2xl border border-stone-800 bg-stone-900 p-6">
+          <h2 className="text-xl font-black uppercase">Band Ledger</h2>
+          <p className="mt-2 text-sm text-stone-400">Bookkeeping uses one running band register. Tag transactions with this show when relevant.</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link href="/admin/ledger" className="rounded-lg bg-red-600 px-4 py-3 font-bold">Open Band Ledger</Link>
+            <Link href={"/admin/ledger?show=" + id} className="rounded-lg border border-stone-600 px-4 py-3 font-bold">View Transactions Tagged With This Show</Link>
+          </div>
+        </section>
 
         <section id="show-expenses" className="mt-8 overflow-hidden rounded-2xl border border-stone-800 bg-stone-900">
           <div className="border-b border-stone-800 px-6 py-5">
