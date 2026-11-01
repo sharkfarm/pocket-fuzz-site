@@ -49,3 +49,11 @@ Payee uses customer name, category reflects ticket/merch/mixed orders, show link
 The action scans all approved orders with pagination. It skips zero-dollar orders because no deposit occurred. The result reports imported count/total and skipped counts. Rerun the button later to import newly approved orders; future approval alone does not automatically post a ledger deposit.
 
 For a controlled server-side catch-up with the existing configured service role, scripts/import-approved-venmo.cjs uses the same importer. Preview: node --env-file=.env.local scripts/import-approved-venmo.cjs. Apply: add --apply. It only selects an actor automatically when the installation has exactly one admin account; otherwise use the authenticated UI. Output includes aggregate counts/amounts only; never share environment credentials.
+
+# Inline category editing and bottom-row entry
+
+Apply supabase/07-ledger-category-editing.sql after migration 06 before deploying this update. It permits category-only updates on nonvoided entries and records old/new categories, actor and timestamp in band_ledger_category_changes. Amounts, dates, payees, show links and memo remain protected; void and replace a transaction to correct those. Voided transactions cannot be reclassified. No environment changes are needed.
+
+Click a Category cell to choose another category; it saves immediately and reports errors without losing the old selection. A stale update cannot overwrite a newer category because the server checks the previous category. Categories do not affect payments, deposits or balances. The category audit table is readable by authenticated admins and writable only through the database trigger.
+
+The former Add Transaction panel is replaced by a blank bottom row in the register. Each editable column has a corresponding input, with an optional Show and single-line Memo. Balance is calculated; choose Save or press Enter to post. A new blank row appears after saving. The register scrolls horizontally on narrow screens and retains compact single-line posted rows with expandable memos. Entry IDs continue to prevent duplicate submissions.

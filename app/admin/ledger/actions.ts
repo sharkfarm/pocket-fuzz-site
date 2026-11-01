@@ -1,7 +1,7 @@
 "use server";
 import { importApprovedVenmoDeposits } from "@/lib/venmo-ledger-import";
 import { createClient } from "@/lib/supabase/server";
-import { parseBandLedgerEntry, showLabel } from "@/lib/band-ledger";
+import { BAND_LEDGER_CATEGORIES, parseBandLedgerEntry, showLabel } from "@/lib/band-ledger";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 const path = "/admin/ledger";
@@ -56,4 +56,23 @@ export async function importApprovedVenmoOrders() {
     (result.zeroAmount ? " " + result.zeroAmount + " zero-dollar orders excluded." : "");
   revalidatePath(path);
   redirect(path + "?saved=venmo-import&notice=" + encodeURIComponent(notice));
+}
+
+export async function updateBandLedgerCategory(form: FormData): Promise<{ error: string | null }> {
+  const db = await createClient();
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) redirect("/admin/login");
+  const id = String(form.get("entry_id") ?? "");
+  const category = String(form.get("category") ?? "");
+  const previous = String(form.get("previous_category") ?? "");
+  if (!id || !Object.hasOwn(BAND_LEDGER_CATEGORIES, category) || !Object.hasOwn(BAND_LEDGER_CATEGORIES, previous)) {
+    return { error: "Choose a valid category." };
+  }
+  if (category === previous) return { error: null };
+  const { data, error } = await db.from("band_ledger_entries").update({ category })
+    .eq("id", id).eq("category", previous).is("voided_at", null).select("id,category").single();
+  if (error || !data) return { error: error?.message || "The entry changed or was voided. Refresh and try again." };
+  if (data.category !== category) return { error: "The database did not retain the category. Apply supabase/07-ledger-category-editing.sql." };
+  revalidatePath(path);
+  return { error: null };
 }
