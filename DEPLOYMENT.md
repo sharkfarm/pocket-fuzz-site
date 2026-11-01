@@ -39,3 +39,13 @@ If migration 05 was applied, migration 06 copies explicitly posted show-ledger r
 The former show ledger widget is replaced with links to the global register and a show-tag filter. Posted transactions are immutable: void with a reason and post a correction. Duplicate submissions reuse the same entry ID and cannot create a second transaction.
 
 Smoke checks: post an opening balance and general-band payment, post receipts for two shows, verify one running balance, filter by one show without resetting balances, backdate an entry, void an entry, export CSV, and verify phone/desktop layouts. Migration/data import and visual verification must be checked in the target environment.
+
+# Approved Venmo catch-up import
+
+The Band Ledger now has an Import Approved Venmo Payments button. No additional SQL migration or environment variables are needed. It imports approved positive-dollar orders, including merchandise orders with no show, as deposits. Source order IDs are reused as ledger entry IDs so the existing primary key prevents duplicates across retries, concurrent requests and voided imports. Manual transactions are not overwritten.
+
+Payee uses customer name, category reflects ticket/merch/mixed orders, show links are preserved, and memo contains order number, Venmo username, items, and fee context. Date uses submitted_at (the customer's payment confirmation), then reviewed_at, then created_at, converted to America/Denver. Deposit is expected_amount: gross approved receipt including customer service fees. It is NOT verified net Venmo proceeds. Record actual processing fees separately. No orders are approved again, inventory is not changed, and receipt emails/PF-Com sync are not rerun.
+
+The action scans all approved orders with pagination. It skips zero-dollar orders because no deposit occurred. The result reports imported count/total and skipped counts. Rerun the button later to import newly approved orders; future approval alone does not automatically post a ledger deposit.
+
+For a controlled server-side catch-up with the existing configured service role, scripts/import-approved-venmo.cjs uses the same importer. Preview: node --env-file=.env.local scripts/import-approved-venmo.cjs. Apply: add --apply. It only selects an actor automatically when the installation has exactly one admin account; otherwise use the authenticated UI. Output includes aggregate counts/amounts only; never share environment credentials.

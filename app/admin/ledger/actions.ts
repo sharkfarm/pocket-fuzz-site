@@ -1,4 +1,5 @@
 "use server";
+import { importApprovedVenmoDeposits } from "@/lib/venmo-ledger-import";
 import { createClient } from "@/lib/supabase/server";
 import { parseBandLedgerEntry, showLabel } from "@/lib/band-ledger";
 import { revalidatePath } from "next/cache";
@@ -40,4 +41,19 @@ export async function voidBandLedgerEntry(form: FormData) {
   if (error || !data) fail(error?.message ?? "Transaction not found or already voided.");
   revalidatePath(path);
   redirect(path + "?saved=voided");
+}
+
+export async function importApprovedVenmoOrders() {
+  const db = await createClient();
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) redirect("/admin/login");
+  let result;
+  try { result = await importApprovedVenmoDeposits(db, user.id); }
+  catch (error) { fail(error instanceof Error ? error.message : "Venmo import failed."); }
+  const total = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(result.depositCents / 100);
+  const notice = "Imported " + result.imported + " Venmo deposits totaling " + total +
+    ". " + result.skipped + " previously imported orders skipped." +
+    (result.zeroAmount ? " " + result.zeroAmount + " zero-dollar orders excluded." : "");
+  revalidatePath(path);
+  redirect(path + "?saved=venmo-import&notice=" + encodeURIComponent(notice));
 }

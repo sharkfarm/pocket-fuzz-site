@@ -27,7 +27,7 @@ async function allShows(db: Db) {
   }
 }
 export default async function BandLedgerPage({ searchParams }: {
-  searchParams: Promise<{ error?: string; saved?: string; show?: string }>;
+  searchParams: Promise<{ error?: string; saved?: string; show?: string; notice?: string }>;
 }) {
   const db = await createClient();
   const { data: { user } } = await db.auth.getUser();
@@ -41,7 +41,7 @@ export default async function BandLedgerPage({ searchParams }: {
       <h1 className="mt-3 text-3xl font-black uppercase sm:text-4xl">Band Ledger</h1>
       <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-400">One running register for the band across all shows. Record actual money paid out and deposited; attach a show when relevant.</p>
       {query.error && <p role="alert" className="mt-5 rounded-lg border border-red-900 bg-red-950/40 p-4 text-red-200">{query.error}</p>}
-      {query.saved && <p role="status" className="mt-5 rounded-lg border border-emerald-900 bg-emerald-950/30 p-4 text-emerald-200">{query.saved === "voided" ? "Transaction voided; original retained in history." : "Transaction posted."}</p>}
+      {query.saved && <p role="status" className="mt-5 rounded-lg border border-emerald-900 bg-emerald-950/30 p-4 text-emerald-200">{query.saved === "venmo-import" ? (query.notice || "Venmo import complete.") : query.saved === "voided" ? "Transaction voided; original retained in history." : "Transaction posted."}</p>}
       {error ? <section className="mt-6 rounded-xl border border-amber-800 p-5">
         <p className="font-bold text-amber-200">The band ledger could not load. No incomplete balance is displayed.</p>
         <p className="mt-2 text-sm text-stone-400">Apply supabase/06-band-ledger.sql if the band ledger table is missing.</p>

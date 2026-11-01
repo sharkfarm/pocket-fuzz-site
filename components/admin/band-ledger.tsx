@@ -1,8 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { BAND_LEDGER_CATEGORIES, bandLedgerCsv, showLabel, type BandLedgerRow, type LedgerShow, type bandLedgerRegister } from "@/lib/band-ledger";
-import { postBandLedgerEntry, voidBandLedgerEntry } from "@/app/admin/ledger/actions";
+import { postBandLedgerEntry, voidBandLedgerEntry, importApprovedVenmoOrders } from "@/app/admin/ledger/actions";
 import LedgerSubmit from "./ledger-submit";
 
 type Register = ReturnType<typeof bandLedgerRegister>;
@@ -15,6 +15,13 @@ export default function BandLedger({ register, shows, initialShow, entryId, toda
   const [show, setShow] = useState(initialShow);
   const [category, setCategory] = useState("");
   const [showVoided, setShowVoided] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const memoDialog = useRef<HTMLDialogElement>(null);
+  const selectedRow = register.rows.find(row => row.id === selectedId);
+  function expandMemo(row: BandLedgerRow) {
+    setSelectedId(row.id);
+    memoDialog.current?.showModal();
+  }
   const visible = register.rows.filter(row =>
     (showVoided || !row.voided_at) && (!show || (show === "none" ? !row.show_id && !row.show_label : row.show_id === show)) &&
     (!category || row.category === category) &&
@@ -33,6 +40,12 @@ export default function BandLedger({ register, shows, initialShow, entryId, toda
       <Metric label="Total deposits" value={money(register.deposits)} />
       <Metric label="Current band balance" value={money(register.balance)} />
     </div>
+    <section className="mt-6 rounded-xl border border-stone-700 bg-stone-900 p-4 sm:p-5">
+      <h2 className="font-black uppercase">Import Approved Venmo Payments</h2>
+      <p className="mt-3 max-w-4xl text-sm leading-6 text-stone-400">Add all approved Venmo orders as deposits, including orders without a show. Each order is imported once; running this again skips existing imports, including voided ones. Pending and declined orders are excluded. Deposits use gross receipt amounts including customer service fees; record actual processor fees separately.</p>
+      <p className="mt-2 text-xs leading-5 text-stone-400">Dates use customer payment confirmation in Mountain Time, falling back to approval or order creation. Avoid manually entering the same Venmo receipt before importing.</p>
+      <form action={importApprovedVenmoOrders} className="mt-4"><LedgerSubmit>Import Approved Venmo Payments</LedgerSubmit></form>
+    </section>
     <details className="mt-6 rounded-xl border border-stone-700 bg-stone-900 p-4 sm:p-5" open={!register.rows.length}>
       <summary className="min-h-9 cursor-pointer font-black uppercase">Add Transaction</summary>
       <p className="mt-3 text-sm leading-6 text-stone-400">Enter one payment OR deposit per row. To start from an existing balance, choose Opening balance and enter a deposit for a positive balance or a payment for a negative balance. Use a date before your first transaction. The Show field is optional.</p>
@@ -59,16 +72,20 @@ export default function BandLedger({ register, shows, initialShow, entryId, toda
     <div className="hidden overflow-x-auto rounded-xl border border-stone-700 md:block" role="region" aria-label="Band checking register" tabIndex={0}>
       <table className="w-full min-w-[1440px] table-fixed text-left text-sm">
         <colgroup><col className="w-[110px]" /><col className="w-[170px]" /><col className="w-[140px]" /><col className="w-[220px]" /><col className="w-[280px]" /><col className="w-[150px]" /><col className="w-[150px]" /><col className="w-[180px]" /></colgroup>
-        <thead className="bg-stone-900 text-xs uppercase text-stone-400"><tr>{["Date", "Payee", "Category", "Show", "Memo", "Payment", "Deposit", "Balance"].map((h, i) => <th key={h} scope="col" className={"px-4 py-4 " + (i >= 5 ? "text-right" : "")}>{h}</th>)}</tr></thead>
-        <tbody>{visible.map(row => <tr key={row.id} className={"border-t border-stone-800 align-top " + (row.voided_at ? "opacity-60" : "")}>
-          <td className="whitespace-nowrap px-4 py-4">{row.entry_date}</td>
-          <td className="break-words px-4 py-4 font-bold">{row.payee}{row.voided_at && <span className="mt-2 block text-xs text-stone-400">VOIDED</span>}</td>
-          <td className="break-words px-4 py-4">{BAND_LEDGER_CATEGORIES[row.category]}</td>
-          <td className="break-words px-4 py-4">{showCell(row)}</td>
-          <td className="px-4 py-4"><p className="whitespace-pre-wrap break-words">{row.memo || "—"}</p><VoidEntry row={row} /></td>
-          <td className="whitespace-nowrap px-4 py-4 text-right text-red-400">{row.paymentCents ? money(row.paymentCents) : "—"}</td>
-          <td className="whitespace-nowrap px-4 py-4 text-right text-emerald-400">{row.depositCents ? money(row.depositCents) : "—"}</td>
-          <td className="whitespace-nowrap px-4 py-4 text-right font-black">{money(row.balance)}</td>
+        <thead className="bg-stone-900 text-xs uppercase text-stone-400"><tr>{["Date", "Payee", "Category", "Show", "Memo", "Payment", "Deposit", "Balance"].map((h, i) => <th key={h} scope="col" className={"px-3 py-2.5 " + (i >= 5 ? "text-right" : "")}>{h}</th>)}</tr></thead>
+        <tbody>{visible.map(row => <tr key={row.id} className={"h-10 border-t border-stone-800 align-middle " + (row.voided_at ? "opacity-60" : "")}>
+          <td className="whitespace-nowrap px-3 py-1.5 leading-5">{row.entry_date}</td>
+          <td className="px-3 py-1.5 leading-5"><div className="flex min-w-0 items-center gap-2"><span className="truncate font-bold" title={row.payee}>{row.payee}</span>{row.voided_at && <span className="shrink-0 text-[10px] text-stone-400">VOIDED</span>}</div></td>
+          <td className="px-3 py-1.5 leading-5"><div className="truncate" title={BAND_LEDGER_CATEGORIES[row.category]}>{BAND_LEDGER_CATEGORIES[row.category]}</div></td>
+          <td className="px-3 py-1.5 leading-5"><div className="truncate" title={row.showName}>{showCell(row)}</div></td>
+          <td className="px-3 py-1.5 leading-5">
+            <button type="button" onClick={() => expandMemo(row)} aria-haspopup="dialog" aria-label={"Expand memo and transaction details for " + row.payee + " on " + row.entry_date} className="flex h-7 w-full min-w-0 items-center gap-2 text-left">
+              <span className="min-w-0 flex-1 truncate text-stone-400">{row.memo || "—"}</span><span className="shrink-0 text-xs font-bold text-red-400">Expand</span>
+            </button>
+          </td>
+          <td className="whitespace-nowrap px-3 py-1.5 text-right leading-5 text-red-400">{row.paymentCents ? money(row.paymentCents) : "—"}</td>
+          <td className="whitespace-nowrap px-3 py-1.5 text-right leading-5 text-emerald-400">{row.depositCents ? money(row.depositCents) : "—"}</td>
+          <td className="whitespace-nowrap px-3 py-1.5 text-right font-black leading-5">{money(row.balance)}</td>
         </tr>)}</tbody>
       </table>
       {!visible.length && <p className="p-6 text-stone-400">No matching transactions.</p>}
@@ -76,12 +93,25 @@ export default function BandLedger({ register, shows, initialShow, entryId, toda
     <div className="space-y-3 md:hidden">{visible.map(row => <article key={row.id} className={"min-w-0 rounded-xl border border-stone-700 bg-stone-900 p-4 " + (row.voided_at ? "opacity-60" : "")}>
       <p className="text-xs text-stone-400">{row.entry_date} · {BAND_LEDGER_CATEGORIES[row.category]}{row.voided_at ? " · VOIDED" : ""}</p>
       <h2 className="mt-2 font-bold">{row.payee}</h2><p className="mt-2 text-sm">{showCell(row)}</p>
-      {row.memo && <p className="mt-3 whitespace-pre-wrap text-sm text-stone-400">{row.memo}</p>}
+      <button type="button" onClick={() => expandMemo(row)} aria-haspopup="dialog" className="mt-2 flex min-h-11 w-full min-w-0 items-center gap-2 text-left text-sm"><span className="min-w-0 flex-1 truncate text-stone-400">{row.memo || "Transaction details"}</span><span className="shrink-0 font-bold text-red-400">Expand</span></button>
       <dl className="mt-4 grid grid-cols-3 gap-2 text-sm"><div><dt className="text-xs text-stone-400">Payment</dt><dd className="mt-1 font-bold text-red-400">{row.paymentCents ? money(row.paymentCents) : "—"}</dd></div><div><dt className="text-xs text-stone-400">Deposit</dt><dd className="mt-1 font-bold text-emerald-400">{row.depositCents ? money(row.depositCents) : "—"}</dd></div><div><dt className="text-xs text-stone-400">Balance</dt><dd className="mt-1 font-black">{money(row.balance)}</dd></div></dl>
-      <VoidEntry row={row} />
     </article>)}
     {!visible.length && <p className="p-4 text-stone-400">No matching transactions.</p>}</div>
-    <p className="mt-4 text-xs leading-5 text-stone-400">Posted transactions retain their original values. To correct one, void it with a reason and post a replacement. A transfer between accounts already included in your band balance is not new income; only enter money crossing the boundary of the account or funds you track here.</p>
+    <dialog ref={memoDialog} onClose={() => setSelectedId(null)} aria-labelledby="ledger-memo-title" className="fixed inset-0 m-auto max-h-[85dvh] w-[calc(100%_-_2rem)] max-w-xl overflow-y-auto rounded-xl border border-stone-700 bg-stone-900 p-5 text-stone-100 shadow-2xl backdrop:bg-black/70">
+      <div className="flex items-center justify-between gap-4">
+        <h2 id="ledger-memo-title" className="text-lg font-black">Memo & Transaction Details</h2>
+        <button type="button" onClick={() => memoDialog.current?.close()} className="min-h-11 rounded-lg border border-stone-600 px-4 py-2 text-sm font-bold">Close</button>
+      </div>
+      {selectedRow && <>
+        <p className="mt-4 font-bold">{selectedRow.payee}</p>
+        <p className="mt-1 text-sm text-stone-400">{selectedRow.entry_date} · {BAND_LEDGER_CATEGORIES[selectedRow.category]}</p>
+        {selectedRow.showName && <p className="mt-2 text-sm">{showCell(selectedRow)}</p>}
+        <p className="mt-5 whitespace-pre-wrap break-words rounded-lg bg-stone-950 p-4 text-sm leading-6">{selectedRow.memo || "No memo recorded."}</p>
+        <dl className="mt-4 grid grid-cols-3 gap-3 text-sm"><div><dt className="text-xs text-stone-400">Payment</dt><dd className="mt-1 font-bold">{selectedRow.paymentCents ? money(selectedRow.paymentCents) : "—"}</dd></div><div><dt className="text-xs text-stone-400">Deposit</dt><dd className="mt-1 font-bold">{selectedRow.depositCents ? money(selectedRow.depositCents) : "—"}</dd></div><div><dt className="text-xs text-stone-400">Balance</dt><dd className="mt-1 font-black">{money(selectedRow.balance)}</dd></div></dl>
+        <VoidEntry row={selectedRow} />
+      </>}
+    </dialog>
+    <p className="mt-4 text-xs leading-5 text-stone-400">Posted transactions retain their original values. To correct one, expand its memo, void it with a reason, and post a replacement. A transfer between accounts already included in your band balance is not new income; only enter money crossing the boundary of the account or funds you track here.</p>
   </>;
 }
 function Metric({ label, value }: { label: string; value: string }) {
