@@ -112,7 +112,7 @@ export default function HomeClient({
   const [activeTitle, setActiveTitle] = useState("Pocket Fuzz");
 
   const gallery: string[] = [
-    "/images/LL-Photo1.png",
+    "/images/PF_Globe1.jpg",
     "/images/moesDrums.jpg",
     "/images/PF_Globe2.jpg",
     "/images/LostLake1.jpg",
@@ -214,7 +214,7 @@ export default function HomeClient({
           <div className="relative">
             <div className="absolute -left-4 -top-4 h-full w-full border border-red-700/50" />
             <img
-              src="/images/PF_Globe1.jpg"
+              src="/images/LL-Photo1.png"
               alt="Pocket Fuzz live"
               className="relative h-64 w-full sm:h-96 lg:h-[460px] border border-stone-800 object-cover"
             />
