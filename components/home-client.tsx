@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import {
   FaInstagram,
   FaFacebookF,
@@ -337,6 +337,8 @@ export default function HomeClient({
         </div>
       </section>
 
+      <MailingListSection />
+
       <section id="music" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16">
         <div className="grid gap-8 md:grid-cols-2">
           <div>
@@ -559,4 +561,91 @@ function formatShowTime(value: string | null) {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(2000, 0, 1, hour, minute));
+}
+
+function MailingListSection() {
+  const [state, setState] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
+  const submitting = useRef(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (submitting.current) return;
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    submitting.current = true;
+    setState("loading");
+    setMessage("");
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    try {
+      const response = await fetch("/api/mailing-list", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: String(data.get("name") ?? "").trim(),
+          email: String(data.get("email") ?? "").trim(),
+          subscribe: data.get("subscribe") === "on",
+          website: String(data.get("website") ?? ""),
+        }),
+        signal: controller.signal,
+      });
+      const result = await response.json();
+      if (!response.ok || result.ok !== true) {
+        throw new Error(result.error || "Could not join the mailing list. Please try again.");
+      }
+      form.reset();
+      setState("success");
+      setMessage("You're on the list! Watch your inbox for Pocket Fuzz shows and news.");
+    } catch (error) {
+      setState("error");
+      setMessage(error instanceof Error && error.name !== "AbortError" && error.name !== "TypeError"
+        ? error.message
+        : "Could not reach the mailing list. Please try again.");
+    } finally {
+      clearTimeout(timer);
+      submitting.current = false;
+    }
+  }
+
+  return (
+    <section id="mailing-list" aria-labelledby="mailing-list-title" className="border-b border-stone-800 bg-[#0a0908] px-4 py-10 sm:px-6 sm:py-16">
+      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-2 lg:items-start">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.35em] text-red-500">Stay in the fuzz</p>
+          <h2 id="mailing-list-title" className="mt-4 text-3xl font-black uppercase sm:text-4xl">Join the Mailing List</h2>
+          <p className="mt-4 max-w-lg leading-7 text-stone-400">Get upcoming shows, new music, and Pocket Fuzz news straight to your inbox.</p>
+        </div>
+        <form onSubmit={submit} aria-busy={state === "loading"} className="min-w-0 border border-stone-800 bg-[#11100f] p-5 sm:p-8">
+          <fieldset disabled={state === "loading"} className="min-w-0 space-y-5 disabled:opacity-70">
+            <legend className="sr-only">Mailing list signup</legend>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="min-w-0">
+                <label htmlFor="mailing-name" className="mb-2 block text-sm font-bold">Name</label>
+                <input id="mailing-name" name="name" autoComplete="name" required maxLength={120} className="min-h-12 w-full min-w-0 border border-stone-600 bg-black px-3 text-base text-white focus-visible:outline-2 focus-visible:outline-red-500" />
+              </div>
+              <div className="min-w-0">
+                <label htmlFor="mailing-email" className="mb-2 block text-sm font-bold">Email</label>
+                <input id="mailing-email" name="email" type="email" autoComplete="email" required maxLength={254} className="min-h-12 w-full min-w-0 border border-stone-600 bg-black px-3 text-base text-white focus-visible:outline-2 focus-visible:outline-red-500" />
+              </div>
+            </div>
+            <div hidden aria-hidden="true">
+              <label htmlFor="mailing-website">Leave this blank</label>
+              <input id="mailing-website" name="website" tabIndex={-1} autoComplete="off" />
+            </div>
+            <label className="flex cursor-pointer items-start gap-3 text-sm leading-6 text-stone-300">
+              <input name="subscribe" type="checkbox" required aria-describedby="mailing-consent" className="mt-1 h-5 w-5 shrink-0 accent-red-600" />
+              <span id="mailing-consent">Yes, I want to receive Pocket Fuzz emails about shows, music, and band news. I can unsubscribe at any time.</span>
+            </label>
+            <button type="submit" className="min-h-12 w-full border border-red-600 bg-red-600 px-6 py-3 text-sm font-black uppercase tracking-[0.15em] text-white hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white disabled:cursor-wait sm:w-auto">
+              {state === "loading" ? "Joining…" : "Join the Mailing List"}
+            </button>
+          </fieldset>
+          <p role="status" aria-live="polite" aria-atomic="true" className={state === "error" ? "mt-4 text-sm text-red-300" : "mt-4 text-sm text-stone-300"}>
+            {state === "loading" ? "Adding you to the mailing list…" : message}
+          </p>
+        </form>
+      </div>
+    </section>
+  );
 }
