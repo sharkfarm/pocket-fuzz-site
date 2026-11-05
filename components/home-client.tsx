@@ -112,10 +112,10 @@ export default function HomeClient({
   const [activeTitle, setActiveTitle] = useState("Pocket Fuzz");
 
   const gallery: string[] = [
-    "/images/PF_Globe1.jpg",
+    "/images/LL-Photo1.png",
     "/images/moesDrums.jpg",
     "/images/PF_Globe2.jpg",
-    "/images/Brandon1.png",
+    "/images/LostLake1.jpg",
     "/images/Ricky1.png",
     "/images/Bobby1.png",
   ];
