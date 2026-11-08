@@ -1,3 +1,7 @@
+import { createHash } from "node:crypto";
+import { after } from "next/server";
+import { Resend } from "resend";
+
 // Server-only: never import this route into a client component.
 export const runtime = "nodejs";
 
@@ -76,9 +80,67 @@ export async function POST(request: Request) {
     if (!response.ok) throw new Error("Upstream rejected signup");
     const result = await response.json();
     if (result?.ok !== true || result?.subscribed !== true) throw new Error("Subscription not confirmed");
+    after(() => sendSignupEmails(name, email));
     return reply({ ok: true });
   } catch {
     // Never relay PF-Com errors, contact IDs, credentials, or subscriber data.
     return reply({ error: "Could not confirm your signup. Please try again shortly." }, 502);
   }
+}
+
+
+async function sendSignupEmails(name: string, email: string) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.error("[Mailing list] RESEND_API_KEY is missing; signup emails were not sent.");
+    return;
+  }
+  const resend = new Resend(apiKey);
+  // Separate recipients and messages; subscribers never see notification recipients.
+  const messages = [
+    {
+      kind: "welcome",
+      to: email,
+      subject: "Welcome to the Pocket Fuzz mailing list!",
+      text: [
+        "Hey " + name + ",",
+        "",
+        "Thanks for joining the Pocket Fuzz mailing list! You're signed up for upcoming shows, new music, and band news.",
+        "",
+        "Find upcoming shows at https://pocket-fuzz.com/shows",
+        "",
+        "See you at a show!",
+        "Pocket Fuzz",
+        "",
+        "You received this confirmation because this email address was used to join our mailing list at pocket-fuzz.com. If that wasn't you, reply to info@pocket-fuzz.com and we'll help.",
+      ].join("\n"),
+    },
+    {
+      kind: "notification",
+      to: "info@pocket-fuzz.com",
+      subject: "New Pocket Fuzz mailing list signup",
+      text: [
+        "A mailing list signup was confirmed by PF-Com.",
+        "",
+        "Name: " + name,
+        "Email: " + email,
+        "Consent: Explicit opt-in to Pocket Fuzz shows, music, and band news.",
+        "Source: Homepage mailing list form",
+      ].join("\n"),
+    },
+  ];
+  const subscriberKey = createHash("sha256").update(email).digest("hex");
+  await Promise.all(messages.map(async ({ kind, ...message }) => {
+    try {
+      const { data, error } = await resend.emails.send({
+        from: "Pocket Fuzz <info@pocket-fuzz.com>",
+        replyTo: "info@pocket-fuzz.com",
+        ...message,
+      }, { idempotencyKey: "mailing-list-" + kind + "/" + subscriberKey });
+      if (error || !data?.id) throw new Error("Email was not accepted");
+    } catch {
+      // Do not log subscriber data or raw provider errors, which can contain secrets.
+      console.error("[Mailing list] " + kind + " email failed; subscription remains confirmed.");
+    }
+  }));
 }
