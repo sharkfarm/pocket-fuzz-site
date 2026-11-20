@@ -128,12 +128,18 @@ export default async function PublicShowsPage() {
                       </p>
                     ) : null}
 
+                    {show.status === "completed" ? (
+                      <button disabled title="This show is completed" className="mt-6 inline-flex cursor-not-allowed rounded-lg border border-stone-700 bg-stone-800 px-5 py-3 font-black uppercase text-stone-500">
+                        Tickets & Details
+                      </button>
+                    ) : (
                     <Link
                       href={`/shows/${show.public_slug}`}
                       className="mt-6 inline-flex rounded-lg bg-red-600 px-5 py-3 font-black uppercase text-white hover:bg-red-500"
                     >
                       Tickets & Details
                     </Link>
+                    )}
                   </div>
                 </article>
               );

@@ -20,6 +20,7 @@ export default async function HomePage() {
       public_description,
       flyer_url,
       featured,
+      status,
       venues (
         name,
         city,

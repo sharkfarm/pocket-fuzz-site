@@ -18,6 +18,7 @@ export type PublicHomeShow = {
   public_description: string | null;
   flyer_url: string | null;
   featured: boolean;
+  status: string;
   venues:
     | {
         name: string | null;
@@ -323,12 +324,18 @@ export default function HomeClient({
                       </a>
                     )}
 
+                    {show.status === "completed" ? (
+                      <button disabled title="This show is completed" className="cursor-not-allowed border border-stone-700 bg-stone-800 px-5 py-3 text-center text-xs font-black uppercase tracking-[0.18em] text-stone-500">
+                        Tickets & Details
+                      </button>
+                    ) : (
                     <Link
                       href={`/shows/${show.public_slug}`}
                       className="border border-red-600 bg-red-600 px-5 py-3 text-center text-xs font-black uppercase tracking-[0.18em] text-white transition hover:bg-red-700"
                     >
                      Tickets & Details
                    </Link>
+                    )}
                   </div>
                 </article>
               );
