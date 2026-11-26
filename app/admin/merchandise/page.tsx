@@ -1,3 +1,4 @@
+import MerchCatalog from "@/components/admin/merch-catalog";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -7,6 +8,8 @@ type PageProps = {
     show?: string;
     payment?: string;
     item?: string;
+    saved?: string;
+    error?: string;
   }>;
 };
 
@@ -167,6 +170,9 @@ export default async function MerchandisePage({
           </Link>
         </div>
 
+        {query.saved && <p role="status" className="mt-5 rounded-lg border border-emerald-900 p-4 text-emerald-200">{query.saved === "archived" ? "Product removed from the shop. History retained." : "Product saved."}</p>}
+        {query.error && <p role="alert" className="mt-5 rounded-lg border border-red-900 p-4 text-red-200">{query.error}</p>}
+        <MerchCatalog />
         {salesError || showError ? (
           <div className="mt-7 rounded-lg border border-red-900 bg-red-950/50 p-4 text-red-200">
             {salesError?.message ?? showError?.message}
