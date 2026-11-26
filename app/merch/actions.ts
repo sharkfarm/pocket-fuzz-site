@@ -7,7 +7,7 @@ import {
   formatOrderNumber,
 } from "@/lib/venmo";
 
-const SHIRT_SIZES = ["S", "M", "L", "XL", "2XL"] as const;
+const SHIRT_SIZES = ["S", "M", "L", "XL"] as const;
 
 const VENMO_FEE_RATE = 0.019;
 const VENMO_FIXED_FEE = 0.10;

@@ -11,7 +11,7 @@ export type MerchProduct = {
   image_url: string | null;
 };
 
-const SHIRT_SIZES = ["S", "M", "L", "XL", "2XL"] as const;
+const SHIRT_SIZES = ["S", "M", "L", "XL"] as const;
 
 const VENMO_FEE_RATE = 0.019;
 const VENMO_FIXED_FEE = 0.10;
@@ -153,7 +153,7 @@ export default function MerchShop({
                         Quantity by size
                       </p>
 
-                      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5">
+                      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
                         {SHIRT_SIZES.map((size) => {
                           const key = `merch_${product.id}_${size}`;
 
